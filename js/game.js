@@ -96,7 +96,6 @@ const Game = {
       });
     });
 
-    // Restart if both players fell off
     if (this.players.every(p => p.y > this.levelHeight + 50)) {
       App.restartLevel();
     }
@@ -112,27 +111,9 @@ const Game = {
     ctx.save();
     ctx.translate(-Math.round(this.camera.x), -Math.round(this.camera.y));
 
-    ctx.fillStyle = '#2d2d44';
-    ctx.fillRect(0, 0, this.levelWidth, this.levelHeight);
-
-    this.platforms.forEach(p => {
-      ctx.fillStyle = p.color || '#555';
-      ctx.fillRect(p.x, p.y, p.width, p.height);
-      if (p.type === 'grass') {
-        ctx.fillStyle = '#4a7c3f';
-        ctx.fillRect(p.x, p.y, p.width, 8);
-      }
-    });
-
-    this.doors.forEach(d => {
-      ctx.fillStyle = d.isOpen ? '#2ecc71' : '#7f8c8d';
-      ctx.fillRect(d.x, d.y, d.width, d.height);
-      if (d.isOpen) {
-        ctx.fillStyle = '#27ae60';
-        ctx.fillRect(d.x + 4, d.y + 4, d.width - 8, d.height - 8);
-      }
-    });
-
+    this.drawBackground(ctx);
+    this.platforms.forEach(p => this.drawPlatform(ctx, p));
+    this.doors.forEach(d => this.drawDoor(ctx, d));
     this.diamonds.forEach(d => d.draw(ctx));
     this.enemies.forEach(e => e.draw(ctx));
     this.players.forEach(p => p.draw(ctx));
@@ -140,6 +121,55 @@ const Game = {
     ctx.restore();
 
     UI.drawHUD(ctx);
+  },
+
+  drawBackground(ctx) {
+    ctx.fillStyle = '#2d2d44';
+    ctx.fillRect(0, 0, this.levelWidth, this.levelHeight);
+
+    const bg = App.assets['background'];
+    if (bg && bg.complete && bg.naturalWidth > 0) {
+      for (let x = 0; x < this.levelWidth; x += bg.width) {
+        for (let y = 0; y < this.levelHeight; y += bg.height) {
+          ctx.drawImage(bg, x, y);
+        }
+      }
+    }
+  },
+
+  drawPlatform(ctx, p) {
+    const key = p.type === 'grass' ? 'platform_grass' : 'platform_stone';
+    const img = App.assets[key];
+    if (img && img.complete && img.naturalWidth > 0) {
+      const w = img.width;
+      const h = img.height;
+      for (let x = p.x; x < p.x + p.width; x += w) {
+        for (let y = p.y; y < p.y + p.height; y += h) {
+          ctx.drawImage(img, x, y, Math.min(w, p.x + p.width - x), Math.min(h, p.y + p.height - y));
+        }
+      }
+    } else {
+      ctx.fillStyle = p.color || '#555';
+      ctx.fillRect(p.x, p.y, p.width, p.height);
+      if (p.type === 'grass') {
+        ctx.fillStyle = '#4a7c3f';
+        ctx.fillRect(p.x, p.y, p.width, 8);
+      }
+    }
+  },
+
+  drawDoor(ctx, d) {
+    const key = d.isOpen ? 'door_open' : 'door_closed';
+    const img = App.assets[key];
+    if (img && img.complete && img.naturalWidth > 0) {
+      const s = Math.min(d.width / img.width, d.height / img.height);
+      const dw = img.width * s;
+      const dh = img.height * s;
+      ctx.drawImage(img, d.x + (d.width - dw) / 2, d.y + d.height - dh, dw, dh);
+    } else {
+      ctx.fillStyle = d.isOpen ? '#2ecc71' : '#7f8c8d';
+      ctx.fillRect(d.x, d.y, d.width, d.height);
+    }
   },
 
   checkCollision(a, b) {

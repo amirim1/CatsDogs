@@ -76,16 +76,34 @@ class Player {
   }
 
   draw(ctx) {
-    ctx.fillStyle = this.color;
-    ctx.fillRect(this.x, this.y, this.width, this.height);
+    const assetKey = this.getSpriteKey();
+    const img = App.assets[assetKey];
 
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(this.x + 6, this.y + 8, 6, 6);
-    ctx.fillRect(this.x + this.width - 12, this.y + 8, 6, 6);
+    if (img && img.complete && img.naturalWidth > 0) {
+      const s = Math.min(this.width / img.width, this.height / img.height);
+      const dw = img.width * s;
+      const dh = img.height * s;
+      const dx = this.x + (this.width - dw) / 2;
+      const dy = this.y + this.height - dh;
+      ctx.drawImage(img, dx, dy, dw, dh);
+    } else {
+      ctx.fillStyle = this.color;
+      ctx.fillRect(this.x, this.y, this.width, this.height);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(this.x + 6, this.y + 8, 6, 6);
+      ctx.fillRect(this.x + this.width - 12, this.y + 8, 6, 6);
+    }
 
     ctx.fillStyle = '#fff';
     ctx.font = '10px monospace';
     ctx.textAlign = 'center';
     ctx.fillText(this.type, this.x + this.width / 2, this.y - 5);
+  }
+
+  getSpriteKey() {
+    const prefix = this.type === 'cat' ? 'cat' : 'dog';
+    if (!this.onGround) return prefix + '_jump';
+    if (Math.abs(this.vx) > 0.5) return prefix + '_run';
+    return prefix + '_idle';
   }
 }
