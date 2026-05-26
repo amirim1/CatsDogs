@@ -2,12 +2,12 @@ class Player {
   constructor(x, y, type, color) {
     this.x = x;
     this.y = y;
-    this.width = 30;
-    this.height = 40;
+    this.width = 36;
+    this.height = 48;
     this.vx = 0;
     this.vy = 0;
     this.speed = 4;
-    this.jumpPower = -10;
+    this.jumpPower = -12;
     this.onGround = false;
     this.type = type;
     this.color = color;
@@ -39,7 +39,7 @@ class Player {
       }
     }
 
-    this.vy += 0.6;
+    this.vy += 0.45;
     if (this.vy > 15) this.vy = 15;
 
     this.x += this.vx;
