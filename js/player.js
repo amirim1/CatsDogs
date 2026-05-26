@@ -73,6 +73,8 @@ class Player {
 
     this.x += this.vx;
     game.platforms.forEach(p => {
+      if (p.y + p.height <= this.y + 4) return; // platform above head — walk under
+      if (p.y >= this.y + this.height - 4) return; // platform below feet — walk over
       if (game.checkCollision(this, p)) {
         if (this.vx > 0) this.x = p.x - this.width;
         else if (this.vx < 0) this.x = p.x + p.width;

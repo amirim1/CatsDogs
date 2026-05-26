@@ -13,9 +13,9 @@ const Levels = {
 
   _build(num) {
     const isHard = num >= 3;
-    const platformCount = num === 1 ? 5 + Math.floor(Math.random() * 2)
-                      : num === 2 ? 7 + Math.floor(Math.random() * 3)
-                      : 10 + Math.floor(Math.random() * 3);
+    const platformCount = num === 1 ? 4 + Math.floor(Math.random() * 2)
+                      : num === 2 ? 5 + Math.floor(Math.random() * 3)
+                      : 8 + Math.floor(Math.random() * 3);
 
     const level = {
       width: 800 + platformCount * 200,
@@ -34,14 +34,14 @@ const Levels = {
 
     const styles = ['burger', 'sausage'];
     let px = 250;
-    let py = 480;
-    const maxStepUp = -90;
-    const maxStepDown = 60;
+    let py = 460;
+    const maxStepUp = -100;
+    const maxStepDown = 70;
 
     for (let i = 0; i < platformCount; i++) {
       const style = styles[i % styles.length];
       const w = 180 + Math.floor(Math.random() * 60);
-      const gapX = 130 + Math.floor(Math.random() * 50);
+      const gapX = 180 + Math.floor(Math.random() * 80);
 
       let dy;
       if (py <= 200) {
@@ -94,7 +94,7 @@ const Levels = {
           y: plat.y - 40,
           patrolLeft: plat.x + plat.width / 2 - patrolW / 2,
           patrolRight: plat.x + plat.width / 2 + patrolW / 2,
-          speed: 1.5 + Math.random(),
+          speed: 0.8 + Math.random() * 0.7,
           pattern: patterns[e % patterns.length],
         });
       }

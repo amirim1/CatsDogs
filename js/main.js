@@ -52,6 +52,10 @@ const App = {
       { id: 'floor_clean_02', src: 'assets/floor/floor_clean_02.png' },
       { id: 'floor_clean_03', src: 'assets/floor/floor_clean_03.png' },
       { id: 'floor_clean_04', src: 'assets/floor/floor_clean_04.png' },
+      { id: 'pinkfloor1of4', src: 'assets/floor/pinkfloor1of4.png' },
+      { id: 'pinkfloor2of4', src: 'assets/floor/pinkfloor2of4.png' },
+      { id: 'pinkfloor3of4', src: 'assets/floor/pinkfloor3of4.png.png' },
+      { id: 'pinkfloor4of4', src: 'assets/floor/pinkfloor4of4.png.png' },
       { id: 'door_closed_top', src: 'assets/kenney_new-platformer-pack-1.1/Sprites/Tiles/Default/door_closed_top.png' },
       { id: 'door_open_top', src: 'assets/kenney_new-platformer-pack-1.1/Sprites/Tiles/Default/door_open_top.png' },
     ];

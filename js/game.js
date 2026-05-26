@@ -10,7 +10,6 @@ const Game = {
   keys: {},
   levelWidth: 0,
   levelHeight: 0,
-  respawnTimer: 0,
 
   init() {
     this.setupInput();
@@ -44,7 +43,6 @@ const Game = {
     this.platforms = data.platforms || [];
     this.doors = data.doors || [];
     this.keyCollected = false;
-    this.respawnTimer = 0;
 
     this.key = data.key ? new Key(data.key.x, data.key.y) : null;
 
@@ -72,11 +70,6 @@ const Game = {
 
   update() {
     if (App.state !== 'playing') return;
-
-    if (this.respawnTimer > 0) {
-      this.respawnTimer--;
-      return;
-    }
 
     this.enemies.forEach(e => e.update());
     this.players.forEach(p => p.update(this));
@@ -119,9 +112,8 @@ const Game = {
       this.enemies.forEach(e => {
         if (this.checkCollision(p, e)) {
           p.lives--;
-          p.flicker = 40;
+          p.flicker = 45;
           App.playSound('hurt');
-          this.respawnPlayers();
         }
       });
     });
@@ -135,10 +127,9 @@ const Game = {
     if (this.players.every(p => p.y > this.levelHeight + 50)) {
       this.players.forEach(p => {
         p.lives--;
-        p.flicker = 40;
+        p.flicker = 45;
       });
       App.playSound('hurt');
-      this.respawnPlayers();
       if (this.players.every(p => p.lives <= 0)) {
         App.state = 'fail';
       }
@@ -148,19 +139,6 @@ const Game = {
     const midY = (this.players[0].y + this.players[1].y) / 2;
     this.camera.x = midX - App.canvas.width / 2;
     this.camera.y = midY - App.canvas.height / 2;
-  },
-
-  respawnPlayers() {
-    const data = Levels.getLast();
-    this.players[0].x = data.spawn.cat.x;
-    this.players[0].y = data.spawn.cat.y;
-    this.players[0].vx = 0;
-    this.players[0].vy = 0;
-    this.players[1].x = data.spawn.dog.x;
-    this.players[1].y = data.spawn.dog.y;
-    this.players[1].vx = 0;
-    this.players[1].vy = 0;
-    this.respawnTimer = 20;
   },
 
   render() {
@@ -236,24 +214,39 @@ const Game = {
   },
 
   drawFloorColumn(ctx, p, tiles, tileSize) {
+    const pink1 = App.assets['pinkfloor1of4'];
+    const pink2 = App.assets['pinkfloor2of4'];
+    const pink3 = App.assets['pinkfloor3of4'];
+    const pink4 = App.assets['pinkfloor4of4'];
+
+    const usePink = pink1 && pink1.complete && pink1.naturalWidth > 0;
+
     let ty = p.y;
     let idx = 0;
-    let firstTile = App.assets[tiles[0]];
-    if (!firstTile || !firstTile.complete || firstTile.naturalWidth === 0) {
-      firstTile = App.assets['sausage_mid'];
-    }
-    if (!firstTile || !firstTile.complete || firstTile.naturalWidth === 0) {
-      ctx.fillStyle = '#444';
-      ctx.fillRect(p.x, p.y, p.width, p.height);
-      return;
-    }
 
     while (ty < p.y + p.height) {
-      const tile = App.assets[tiles[idx % tiles.length]] || firstTile;
-      for (let tx = p.x; tx < p.x + p.width; tx += tileSize) {
-        const tw = Math.min(tileSize, p.x + p.width - tx);
-        const th = Math.min(tileSize, p.y + p.height - ty);
-        ctx.drawImage(tile, tx, ty, tw, th);
+      if (idx === 0 && usePink) {
+        // Top row: pinkfloor (left + mid + mid + right)
+        for (let tx = p.x; tx < p.x + p.width; tx += tileSize) {
+          const tw = Math.min(tileSize, p.x + p.width - tx);
+          let tile;
+          if (tx === p.x) tile = pink1;
+          else if (tx + tileSize >= p.x + p.width) tile = pink4;
+          else tile = (Math.floor((tx - p.x) / tileSize) % 2 === 0) ? pink2 : pink3;
+          ctx.drawImage(tile, tx, ty, tw, tileSize);
+        }
+      } else {
+        // Below: choco/clean repeating
+        const tile = App.assets[tiles[idx % tiles.length]];
+        if (tile && tile.complete && tile.naturalWidth > 0) {
+          for (let tx = p.x; tx < p.x + p.width; tx += tileSize) {
+            const tw = Math.min(tileSize, p.x + p.width - tx);
+            ctx.drawImage(tile, tx, ty, tw, tileSize);
+          }
+        } else {
+          ctx.fillStyle = '#444';
+          ctx.fillRect(p.x, ty, p.width, tileSize);
+        }
       }
       ty += tileSize;
       idx++;
