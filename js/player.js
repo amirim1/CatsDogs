@@ -81,10 +81,10 @@ class Player {
     ctx.fillRect(this.x + 6, this.y + 8, 6, 6);
     ctx.fillRect(this.x + this.width - 12, this.y + 8, 6, 6);
 
-    if (Game.activePlayer === this) {
-      ctx.strokeStyle = '#f1c40f';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(this.x - 2, this.y - 2, this.width + 4, this.height + 4);
-    }
+    // Label
+    ctx.fillStyle = '#fff';
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(this.type, this.x + this.width / 2, this.y - 5);
   }
 }

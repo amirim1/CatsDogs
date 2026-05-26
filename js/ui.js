@@ -3,7 +3,6 @@ const UI = {
     const w = App.canvas.width;
     const h = App.canvas.height;
 
-    // Dark bar at top
     ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
     ctx.fillRect(0, 0, w, 36);
 
@@ -11,19 +10,17 @@ const UI = {
     ctx.font = '16px monospace';
     ctx.textBaseline = 'middle';
 
-    // Level
     ctx.fillText(`Level ${App.currentLevel}`, 12, 18);
 
-    // Diamonds count
     const total = Game.diamonds.length;
     const collected = Game.diamonds.filter(d => d.collected).length;
     ctx.fillStyle = '#00d4ff';
-    ctx.fillText(`♦ ${collected}/${total}`, 120, 18);
+    ctx.fillText(`Diamonds: ${collected}/${total}`, 140, 18);
 
-    // Active player indicator
-    ctx.fillStyle = '#f1c40f';
-    const activeName = Game.activePlayer ? Game.activePlayer.type : 'none';
-    ctx.fillText(`Active: ${activeName}`, 240, 18);
+    ctx.fillStyle = '#e74c3c';
+    ctx.fillText('[WASD]', w - 220, 18);
+    ctx.fillStyle = '#3498db';
+    ctx.fillText('[Arrows]', w - 120, 18);
   },
 
   drawMenu(ctx) {
@@ -44,10 +41,12 @@ const UI = {
     ctx.fillText('2D Platformer Adventure', w / 2, h / 2 - 30);
 
     ctx.font = '14px monospace';
+    ctx.fillStyle = '#e74c3c';
+    ctx.fillText('Cat: WASD + W to jump', w / 2, h / 2 + 30);
+    ctx.fillStyle = '#3498db';
+    ctx.fillText('Dog: Arrow keys + Up to jump', w / 2, h / 2 + 52);
     ctx.fillStyle = '#aaa';
-    ctx.fillText('Cat: WASD + W jump', w / 2, h / 2 + 30);
-    ctx.fillText('Dog: Arrow keys + Up jump', w / 2, h / 2 + 52);
-    ctx.fillText('Tab — switch character', w / 2, h / 2 + 74);
+    ctx.fillText('Collect all diamonds and reach the door!', w / 2, h / 2 + 80);
 
     ctx.fillStyle = '#2ecc71';
     ctx.font = 'bold 22px monospace';

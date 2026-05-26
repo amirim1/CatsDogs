@@ -4,7 +4,6 @@ const Game = {
   diamonds: [],
   doors: [],
   enemies: [],
-  activePlayer: null,
   camera: { x: 0, y: 0 },
   keys: {},
   levelWidth: 0,
@@ -26,14 +25,6 @@ const Game = {
       if (code === 'Enter') {
         if (App.state === 'menu') App.startGame();
         else if (App.state === 'win') App.startGame();
-      }
-
-      if (code === 'Tab') {
-        e.preventDefault();
-        if (this.players.length >= 2) {
-          const idx = this.players.indexOf(this.activePlayer);
-          this.activePlayer = this.players[(idx + 1) % this.players.length];
-        }
       }
     });
 
@@ -67,7 +58,6 @@ const Game = {
     const cat = new Player(data.spawn.cat.x, data.spawn.cat.y, 'cat', '#e74c3c');
     const dog = new Player(data.spawn.dog.x, data.spawn.dog.y, 'dog', '#3498db');
     this.players.push(cat, dog);
-    this.activePlayer = cat;
     this.camera.x = 0;
     this.camera.y = 0;
   },
@@ -76,7 +66,6 @@ const Game = {
     if (App.state !== 'playing') return;
 
     this.enemies.forEach(e => e.update());
-
     this.players.forEach(p => p.update(this));
 
     this.players.forEach(p => {
@@ -89,8 +78,7 @@ const Game = {
     });
 
     this.doors.forEach(door => {
-      const allCollected = this.diamonds.every(d => d.collected);
-      door.isOpen = allCollected;
+      door.isOpen = this.diamonds.every(d => d.collected);
     });
 
     if (this.players.every(p => {
@@ -107,15 +95,17 @@ const Game = {
       });
     });
 
-    this.activePlayer = this.players.find(p => p === this.activePlayer) || this.players[0];
-    this.camera.x = this.activePlayer.x - App.canvas.width / 2 + this.activePlayer.width / 2;
-    this.camera.y = this.activePlayer.y - App.canvas.height / 2 + this.activePlayer.height / 2;
+    // Camera follows midpoint between both players
+    const midX = (this.players[0].x + this.players[1].x) / 2;
+    const midY = (this.players[0].y + this.players[1].y) / 2;
+    this.camera.x = midX - App.canvas.width / 2;
+    this.camera.y = midY - App.canvas.height / 2;
   },
 
   render() {
     const ctx = App.ctx;
     ctx.save();
-    ctx.translate(-this.camera.x, -this.camera.y);
+    ctx.translate(-Math.round(this.camera.x), -Math.round(this.camera.y));
 
     ctx.fillStyle = '#2d2d44';
     ctx.fillRect(0, 0, this.levelWidth, this.levelHeight);
