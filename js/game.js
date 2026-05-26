@@ -238,15 +238,18 @@ const Game = {
   drawFloorColumn(ctx, p, tiles, tileSize) {
     let ty = p.y;
     let idx = 0;
-    const img = App.assets[tiles[0]];
-    if (!img || !img.complete || !img.naturalWidth > 0) {
-      ctx.fillStyle = '#555';
+    let firstTile = App.assets[tiles[0]];
+    if (!firstTile || !firstTile.complete || firstTile.naturalWidth === 0) {
+      firstTile = App.assets['sausage_mid'];
+    }
+    if (!firstTile || !firstTile.complete || firstTile.naturalWidth === 0) {
+      ctx.fillStyle = '#444';
       ctx.fillRect(p.x, p.y, p.width, p.height);
       return;
     }
 
     while (ty < p.y + p.height) {
-      const tile = App.assets[tiles[idx % tiles.length]];
+      const tile = App.assets[tiles[idx % tiles.length]] || firstTile;
       for (let tx = p.x; tx < p.x + p.width; tx += tileSize) {
         const tw = Math.min(tileSize, p.x + p.width - tx);
         const th = Math.min(tileSize, p.y + p.height - ty);
