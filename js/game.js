@@ -10,6 +10,7 @@ const Game = {
   keys: {},
   levelWidth: 0,
   levelHeight: 0,
+  respawnTimer: 0,
 
   init() {
     this.setupInput();
@@ -27,6 +28,7 @@ const Game = {
       if (code === 'Enter') {
         if (App.state === 'menu') App.startGame();
         else if (App.state === 'win') App.startGame();
+        else if (App.state === 'fail') App.restartLevel();
       }
     });
 
@@ -36,19 +38,20 @@ const Game = {
   },
 
   initLevel(levelNum) {
-    const data = Levels.getData(levelNum);
+    const data = Levels.generate(levelNum);
     this.levelWidth = data.width;
     this.levelHeight = data.height;
     this.platforms = data.platforms || [];
     this.doors = data.doors || [];
     this.keyCollected = false;
+    this.respawnTimer = 0;
 
     this.key = data.key ? new Key(data.key.x, data.key.y) : null;
 
     this.enemies = [];
     if (data.enemies) {
       data.enemies.forEach(e => {
-        this.enemies.push(new Enemy(e.x, e.y, e.patrolLeft, e.patrolRight, e.speed));
+        this.enemies.push(new Enemy(e.x, e.y, e.patrolLeft, e.patrolRight, e.speed, e.pattern));
       });
     }
 
@@ -70,6 +73,11 @@ const Game = {
   update() {
     if (App.state !== 'playing') return;
 
+    if (this.respawnTimer > 0) {
+      this.respawnTimer--;
+      return;
+    }
+
     this.enemies.forEach(e => e.update());
     this.players.forEach(p => p.update(this));
 
@@ -84,7 +92,7 @@ const Game = {
       });
     }
 
-    // Diamond collection (optional, score only)
+    // Diamond collection
     this.players.forEach(p => {
       this.diamonds.forEach(d => {
         if (!d.collected && this.checkCollision(p, d)) {
@@ -95,32 +103,64 @@ const Game = {
       });
     });
 
-    // Win check: key collected + each player at their own door
+    // Win check
     if (this.keyCollected) {
       const catAtDoor = this.doors.some(d => d.owner === 'cat' && this.checkCollision(this.players[0], d));
       const dogAtDoor = this.doors.some(d => d.owner === 'dog' && this.checkCollision(this.players[1], d));
       if (catAtDoor && dogAtDoor) {
         App.nextLevel();
+        return;
       }
     }
 
     // Enemy collision
     this.players.forEach(p => {
+      if (p.lives <= 0 || p.flicker > 0) return;
       this.enemies.forEach(e => {
         if (this.checkCollision(p, e)) {
-          App.restartLevel();
+          p.lives--;
+          p.flicker = 40;
+          App.playSound('hurt');
+          this.respawnPlayers();
         }
       });
     });
 
+    // Check if both dead
+    if (this.players.every(p => p.lives <= 0)) {
+      App.state = 'fail';
+    }
+
+    // Fall off
     if (this.players.every(p => p.y > this.levelHeight + 50)) {
-      App.restartLevel();
+      this.players.forEach(p => {
+        p.lives--;
+        p.flicker = 40;
+      });
+      App.playSound('hurt');
+      this.respawnPlayers();
+      if (this.players.every(p => p.lives <= 0)) {
+        App.state = 'fail';
+      }
     }
 
     const midX = (this.players[0].x + this.players[1].x) / 2;
     const midY = (this.players[0].y + this.players[1].y) / 2;
     this.camera.x = midX - App.canvas.width / 2;
     this.camera.y = midY - App.canvas.height / 2;
+  },
+
+  respawnPlayers() {
+    const data = Levels.getLast();
+    this.players[0].x = data.spawn.cat.x;
+    this.players[0].y = data.spawn.cat.y;
+    this.players[0].vx = 0;
+    this.players[0].vy = 0;
+    this.players[1].x = data.spawn.dog.x;
+    this.players[1].y = data.spawn.dog.y;
+    this.players[1].vx = 0;
+    this.players[1].vy = 0;
+    this.respawnTimer = 20;
   },
 
   render() {
@@ -156,77 +196,77 @@ const Game = {
   },
 
   drawPlatform(ctx, p) {
+    const tileSize = 36;
+
     if (p.style === 'floor') {
-      // Floor: monolithic wall from surface down to level bottom
-      const tiles = ['floor_clean_01', 'floor_clean_02', 'floor_clean_03', 'floor_clean_04'];
-      const tileIdx = App.currentLevel % 2 === 0 ? 'choco' : 'clean';
-      const tileSet = {
-        choco: ['floor_choco_01', 'floor_choco_02', 'floor_choco_03', 'floor_choco_04'],
-        clean: ['floor_clean_01', 'floor_clean_02', 'floor_clean_03', 'floor_clean_04'],
-      };
-      const set = tileSet[tileIdx];
-      this.drawFloorColumn(ctx, p, set);
+      const tileSet = App.currentLevel % 2 === 0
+        ? ['floor_choco_01', 'floor_choco_02', 'floor_choco_03', 'floor_choco_04']
+        : ['floor_clean_01', 'floor_clean_02', 'floor_clean_03', 'floor_clean_04'];
+      this.drawFloorColumn(ctx, p, tileSet, tileSize);
       return;
     }
 
     if (p.style === 'sausage2') {
-      this.drawSectionedPlatform(ctx, p, p.style + '_left', null, p.style + '_right');
+      this.drawSectionedPlatform(ctx, p, tileSize);
       return;
     }
 
     const leftKey = p.style + '_left';
     const midKey = p.style + '_mid';
     const rightKey = p.style + '_right';
+    const left = App.assets[leftKey];
+    const mid = App.assets[midKey];
+    const right = App.assets[rightKey];
 
-    const leftImg = App.assets[leftKey];
-    const midImg = App.assets[midKey];
-    const rightImg = App.assets[rightKey];
+    if (left && left.complete && left.naturalWidth > 0) {
+      const lw = tileSize;
+      const mw = tileSize;
+      const rw = tileSize;
 
-    if (leftImg && leftImg.complete && leftImg.naturalWidth > 0) {
-      const h = leftImg.height;
-      const lw = leftImg.width;
-      const rw = rightImg ? rightImg.width : lw;
-      const mw = midImg ? midImg.width : lw;
-
-      ctx.drawImage(leftImg, p.x, p.y, lw, h);
+      ctx.drawImage(left, p.x, p.y, lw, tileSize);
       for (let x = p.x + lw; x < p.x + p.width - rw; x += mw) {
         const tw = Math.min(mw, p.x + p.width - rw - x);
-        ctx.drawImage(midImg, x, p.y, tw, h);
+        ctx.drawImage(mid, x, p.y, tw, tileSize);
       }
-      ctx.drawImage(rightImg, p.x + p.width - rw, p.y, rw, h);
+      ctx.drawImage(right, p.x + p.width - rw, p.y, rw, tileSize);
     } else {
       ctx.fillStyle = '#555';
       ctx.fillRect(p.x, p.y, p.width, p.height);
     }
   },
 
-  drawFloorColumn(ctx, p, tiles) {
-    const tileH = 18;
+  drawFloorColumn(ctx, p, tiles, tileSize) {
     let ty = p.y;
     let idx = 0;
+    const img = App.assets[tiles[0]];
+    if (!img || !img.complete || !img.naturalWidth > 0) {
+      ctx.fillStyle = '#555';
+      ctx.fillRect(p.x, p.y, p.width, p.height);
+      return;
+    }
+
     while (ty < p.y + p.height) {
-      const img = App.assets[tiles[idx % tiles.length]];
-      if (img && img.complete && img.naturalWidth > 0) {
-        for (let tx = p.x; tx < p.x + p.width; tx += img.width) {
-          const tw = Math.min(img.width, p.x + p.width - tx);
-          ctx.drawImage(img, tx, ty, tw, tileH);
-        }
-      } else {
-        ctx.fillStyle = '#555';
-        ctx.fillRect(p.x, ty, p.width, tileH);
+      const tile = App.assets[tiles[idx % tiles.length]];
+      for (let tx = p.x; tx < p.x + p.width; tx += tileSize) {
+        const tw = Math.min(tileSize, p.x + p.width - tx);
+        const th = Math.min(tileSize, p.y + p.height - ty);
+        ctx.drawImage(tile, tx, ty, tw, th);
       }
-      ty += tileH;
+      ty += tileSize;
       idx++;
     }
   },
 
-  drawSectionedPlatform(ctx, p, leftKey, midKey, rightKey) {
-    const left = App.assets[leftKey];
-    const right = App.assets[rightKey];
-    if (left && left.complete && left.naturalWidth > 0 && right && right.complete && right.naturalWidth > 0) {
-      const h = left.height;
-      ctx.drawImage(left, p.x, p.y, left.width, h);
-      ctx.drawImage(right, p.x + p.width - right.width, p.y, Math.min(right.width, p.width - left.width), h);
+  drawSectionedPlatform(ctx, p, tileSize) {
+    const left = App.assets['sausage2_left'];
+    const right = App.assets['sausage2_right'];
+    if (left && left.complete && left.naturalWidth > 0) {
+      ctx.drawImage(left, p.x, p.y, tileSize, tileSize);
+      ctx.drawImage(right, p.x + p.width - tileSize, p.y, tileSize, tileSize);
+      // fill middle
+      for (let x = p.x + tileSize; x < p.x + p.width - tileSize; x += tileSize) {
+        ctx.drawImage(left, x, p.y, Math.min(tileSize, p.x + p.width - tileSize - x), tileSize);
+      }
     } else {
       ctx.fillStyle = '#555';
       ctx.fillRect(p.x, p.y, p.width, p.height);
@@ -246,16 +286,14 @@ const Game = {
       ctx.fillRect(d.x, d.y, d.width, d.height);
     }
 
-    // Owner label
     ctx.fillStyle = '#fff';
     ctx.font = 'bold 12px monospace';
     ctx.textAlign = 'center';
     ctx.fillText(d.owner, d.x + d.width / 2, d.y - 6);
 
-    // Colored dot
     ctx.fillStyle = d.owner === 'cat' ? '#e74c3c' : '#3498db';
     ctx.beginPath();
-    ctx.arc(d.x + d.width / 2, d.y - 14, 5, 0, Math.PI * 2);
+    ctx.arc(d.x + d.width / 2, d.y - 16, 6, 0, Math.PI * 2);
     ctx.fill();
   },
 

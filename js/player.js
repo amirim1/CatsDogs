@@ -9,16 +9,20 @@ class Player {
     this.accel = 0.4;
     this.friction = 0.88;
     this.maxSpeed = 5;
-    this.jumpPower = -14;
+    this.jumpPower = -10;
     this.gravity = 0.35;
     this.onGround = false;
     this.jumpHeld = false;
     this.type = type;
     this.color = color;
     this.score = 0;
+    this.lives = 3;
+    this.flicker = 0;
   }
 
   update(game) {
+    if (this.flicker > 0) this.flicker--;
+
     const keys = game.keys;
 
     if (this.type === 'cat') {
@@ -33,7 +37,7 @@ class Player {
           this.jumpHeld = true;
           App.playSound('jump');
         } else if (this.jumpHeld && this.vy < 0) {
-          this.vy += this.gravity * 0.4;
+          this.vy += this.gravity * 0.7;
         }
       } else {
         this.jumpHeld = false;
@@ -50,7 +54,7 @@ class Player {
           this.jumpHeld = true;
           App.playSound('jump');
         } else if (this.jumpHeld && this.vy < 0) {
-          this.vy += this.gravity * 0.4;
+          this.vy += this.gravity * 0.7;
         }
       } else {
         this.jumpHeld = false;
@@ -91,6 +95,12 @@ class Player {
       }
     });
 
+    // Ceiling
+    if (this.y < 0) {
+      this.y = 0;
+      this.vy = 0;
+    }
+
     if (this.x < 0) this.x = 0;
     if (this.x + this.width > game.levelWidth) this.x = game.levelWidth - this.width;
     if (this.y + this.height > game.levelHeight) {
@@ -102,27 +112,47 @@ class Player {
 
   draw(ctx) {
     const assetKey = this.getSpriteKey();
-    const img = App.assets[assetKey];
+    let img = App.assets[assetKey];
+    if (!img || !img.complete || !img.naturalWidth > 0) img = null;
 
-    if (img && img.complete && img.naturalWidth > 0) {
+    if (this.flicker > 0 && Math.floor(this.flicker / 4) % 2 === 0) return;
+
+    ctx.save();
+
+    if (img) {
       const s = Math.min(this.width / img.width, this.height / img.height);
       const dw = img.width * s;
       const dh = img.height * s;
-      const dx = this.x + (this.width - dw) / 2;
-      const dy = this.y + this.height - dh;
-      ctx.drawImage(img, dx, dy, dw, dh);
+
+      if (this.vx < 0) {
+        ctx.translate(Math.round(this.x + this.width), 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(img, 0, this.y + this.height - dh, dw, dh);
+      } else {
+        ctx.drawImage(img, Math.round(this.x) + (this.width - dw) / 2, this.y + this.height - dh, dw, dh);
+      }
     } else {
       ctx.fillStyle = this.color;
-      ctx.fillRect(this.x, this.y, this.width, this.height);
+      ctx.fillRect(Math.round(this.x), Math.round(this.y), this.width, this.height);
       ctx.fillStyle = '#fff';
-      ctx.fillRect(this.x + 14, this.y + 18, 12, 12);
-      ctx.fillRect(this.x + this.width - 26, this.y + 18, 12, 12);
+      ctx.fillRect(Math.round(this.x + 14), Math.round(this.y + 18), 12, 12);
+      ctx.fillRect(Math.round(this.x + this.width - 26), Math.round(this.y + 18), 12, 12);
     }
 
+    ctx.restore();
+
+    // Name label
     ctx.fillStyle = '#fff';
     ctx.font = '14px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(this.type, this.x + this.width / 2, this.y - 8);
+    ctx.fillText(this.type, Math.round(this.x + this.width / 2), Math.round(this.y - 8));
+
+    // Lives hearts
+    for (let i = 0; i < 3; i++) {
+      ctx.fillStyle = i < this.lives ? '#e74c3c' : '#333';
+      ctx.font = '12px monospace';
+      ctx.fillText('♥', Math.round(this.x + 8 + i * 16), Math.round(this.y - 22));
+    }
   }
 
   getSpriteKey() {

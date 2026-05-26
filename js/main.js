@@ -35,7 +35,6 @@ const App = {
       { id: 'door_closed', src: 'assets/kenney_new-platformer-pack-1.1/Sprites/Tiles/Default/door_closed.png' },
       { id: 'door_open', src: 'assets/kenney_new-platformer-pack-1.1/Sprites/Tiles/Default/door_open.png' },
       { id: 'background', src: 'assets/kenney_new-platformer-pack-1.1/Sprites/Backgrounds/Default/background_solid_grass.png' },
-      // Floor sprites
       { id: 'burger_left', src: 'assets/floor/burger1of3.png' },
       { id: 'burger_mid', src: 'assets/floor/burger2of3.png' },
       { id: 'burger_right', src: 'assets/floor/burger3of3.png' },
@@ -102,6 +101,8 @@ const App = {
       UI.drawMenu(ctx);
     } else if (this.state === 'win') {
       UI.drawWin(ctx);
+    } else if (this.state === 'fail') {
+      UI.drawFail(ctx);
     } else if (this.state === 'playing') {
       Game.render();
     }
@@ -124,7 +125,7 @@ const App = {
   },
 
   restartLevel() {
-    App.playSound('hurt');
+    this.state = 'playing';
     Game.initLevel(this.currentLevel);
   }
 };
