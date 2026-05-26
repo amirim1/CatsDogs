@@ -1,9 +1,10 @@
 const App = {
   canvas: null,
   ctx: null,
-  state: 'menu', // menu | playing | win
+  state: 'menu',
   currentLevel: 1,
   assets: {},
+  sounds: {},
   assetsLoaded: false,
 
   init() {
@@ -13,6 +14,7 @@ const App = {
     window.addEventListener('resize', () => this.resize());
     Game.init();
     this.loadAssets();
+    this.loadSounds();
     this.loop();
   },
 
@@ -39,6 +41,7 @@ const App = {
 
     let loaded = 0;
     const total = list.length;
+    if (total === 0) { this.assetsLoaded = true; return; }
 
     list.forEach(item => {
       const img = new Image();
@@ -53,6 +56,33 @@ const App = {
       };
       img.src = item.src;
     });
+  },
+
+  loadSounds() {
+    const list = [
+      { id: 'jump', src: 'assets/kenney_new-platformer-pack-1.1/Sounds/sfx_jump.ogg' },
+      { id: 'gem', src: 'assets/kenney_new-platformer-pack-1.1/Sounds/sfx_gem.ogg' },
+      { id: 'hurt', src: 'assets/kenney_new-platformer-pack-1.1/Sounds/sfx_hurt.ogg' },
+      { id: 'win', src: 'assets/kenney_new-platformer-pack-1.1/Sounds/sfx_magic.ogg' },
+    ];
+
+    list.forEach(item => {
+      const audio = new Audio();
+      audio.preload = 'auto';
+      audio.oncanplaythrough = () => { this.sounds[item.id] = audio; };
+      audio.onerror = () => {};
+      audio.src = item.src;
+    });
+  },
+
+  playSound(id) {
+    try {
+      if (this.sounds[id]) {
+        const s = this.sounds[id].cloneNode();
+        s.volume = 0.3;
+        s.play().catch(() => {});
+      }
+    } catch (_) {}
   },
 
   loop() {
@@ -85,6 +115,7 @@ const App = {
   },
 
   nextLevel() {
+    App.playSound('win');
     this.currentLevel++;
     if (this.currentLevel > 3) {
       this.state = 'win';
@@ -94,6 +125,7 @@ const App = {
   },
 
   restartLevel() {
+    App.playSound('hurt');
     Game.initLevel(this.currentLevel);
   }
 };

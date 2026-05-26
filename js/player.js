@@ -25,6 +25,7 @@ class Player {
       if (keys['KeyW'] && this.onGround) {
         this.vy = this.jumpPower;
         this.onGround = false;
+        App.playSound('jump');
       }
     } else {
       if (keys['ArrowLeft']) this.vx = -this.speed;
@@ -34,6 +35,7 @@ class Player {
       if (keys['ArrowUp'] && this.onGround) {
         this.vy = this.jumpPower;
         this.onGround = false;
+        App.playSound('jump');
       }
     }
 
@@ -81,7 +83,6 @@ class Player {
     ctx.fillRect(this.x + 6, this.y + 8, 6, 6);
     ctx.fillRect(this.x + this.width - 12, this.y + 8, 6, 6);
 
-    // Label
     ctx.fillStyle = '#fff';
     ctx.font = '10px monospace';
     ctx.textAlign = 'center';

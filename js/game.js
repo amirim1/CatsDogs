@@ -73,6 +73,7 @@ const Game = {
         if (!d.collected && this.checkCollision(p, d)) {
           d.collected = true;
           p.score++;
+          App.playSound('gem');
         }
       });
     });
@@ -95,7 +96,11 @@ const Game = {
       });
     });
 
-    // Camera follows midpoint between both players
+    // Restart if both players fell off
+    if (this.players.every(p => p.y > this.levelHeight + 50)) {
+      App.restartLevel();
+    }
+
     const midX = (this.players[0].x + this.players[1].x) / 2;
     const midY = (this.players[0].y + this.players[1].y) / 2;
     this.camera.x = midX - App.canvas.width / 2;
