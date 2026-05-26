@@ -138,23 +138,66 @@ const Game = {
   },
 
   drawPlatform(ctx, p) {
-    const key = p.type === 'grass' ? 'platform_grass' : 'platform_stone';
-    const img = App.assets[key];
+    if (p.style === 'floor') {
+      this.drawTiledPlatform(ctx, p, 'sausage_mid');
+      return;
+    }
+
+    if (p.style === 'sausage2') {
+      this.drawSectionedPlatform(ctx, p, p.style + '_left', null, p.style + '_right');
+      return;
+    }
+
+    const leftKey = p.style + '_left';
+    const midKey = p.style + '_mid';
+    const rightKey = p.style + '_right';
+
+    const leftImg = App.assets[leftKey];
+    const midImg = App.assets[midKey];
+    const rightImg = App.assets[rightKey];
+
+    if (leftImg && leftImg.complete && leftImg.naturalWidth > 0) {
+      const h = leftImg.height;
+      const lw = leftImg.width;
+      const rw = rightImg ? rightImg.width : lw;
+      const mw = midImg ? midImg.width : lw;
+
+      ctx.drawImage(leftImg, p.x, p.y, lw, h);
+      for (let x = p.x + lw; x < p.x + p.width - rw; x += mw) {
+        const tw = Math.min(mw, p.x + p.width - rw - x);
+        ctx.drawImage(midImg, x, p.y, tw, h);
+      }
+      ctx.drawImage(rightImg, p.x + p.width - rw, p.y, rw, h);
+    } else {
+      ctx.fillStyle = '#555';
+      ctx.fillRect(p.x, p.y, p.width, p.height);
+    }
+  },
+
+  drawSectionedPlatform(ctx, p, leftKey, midKey, rightKey) {
+    const left = App.assets[leftKey];
+    const right = App.assets[rightKey];
+    if (left && left.complete && left.naturalWidth > 0 && right && right.complete && right.naturalWidth > 0) {
+      const h = left.height;
+      ctx.drawImage(left, p.x, p.y, left.width, h);
+      ctx.drawImage(right, p.x + p.width - right.width, p.y, Math.min(right.width, p.width - left.width), h);
+    } else {
+      ctx.fillStyle = '#555';
+      ctx.fillRect(p.x, p.y, p.width, p.height);
+    }
+  },
+
+  drawTiledPlatform(ctx, p, tileKey) {
+    const img = App.assets[tileKey];
     if (img && img.complete && img.naturalWidth > 0) {
       const w = img.width;
       const h = img.height;
       for (let x = p.x; x < p.x + p.width; x += w) {
-        for (let y = p.y; y < p.y + p.height; y += h) {
-          ctx.drawImage(img, x, y, Math.min(w, p.x + p.width - x), Math.min(h, p.y + p.height - y));
-        }
+        ctx.drawImage(img, x, p.y, Math.min(w, p.x + p.width - x), h);
       }
     } else {
-      ctx.fillStyle = p.color || '#555';
+      ctx.fillStyle = '#555';
       ctx.fillRect(p.x, p.y, p.width, p.height);
-      if (p.type === 'grass') {
-        ctx.fillStyle = '#4a7c3f';
-        ctx.fillRect(p.x, p.y, p.width, 8);
-      }
     }
   },
 

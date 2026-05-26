@@ -8,18 +8,22 @@ const Levels = {
     }
   },
 
+  nextStyle(idx) {
+    return idx % 2 === 0 ? 'burger' : 'sausage';
+  },
+
   level1: {
     width: 1600,
     height: 600,
     spawn: { cat: { x: 50, y: 450 }, dog: { x: 100, y: 450 } },
     platforms: [
-      // Ground
-      { x: 0, y: 550, width: 1600, height: 50, type: 'grass', color: '#555' },
-      // Platforms
-      { x: 300, y: 400, width: 200, height: 20, type: 'stone', color: '#777' },
-      { x: 600, y: 300, width: 200, height: 20, type: 'stone', color: '#777' },
-      { x: 900, y: 400, width: 200, height: 20, type: 'stone', color: '#777' },
-      { x: 1200, y: 300, width: 200, height: 20, type: 'stone', color: '#777' },
+      { x: 0, y: 550, width: 1600, height: 18, style: 'floor' },
+      { x: 300, y: 400, width: 200, height: 18, style: 'burger' },
+      { x: 560, y: 340, width: 36, height: 18, style: 'sausage2' },
+      { x: 600, y: 300, width: 200, height: 18, style: 'sausage' },
+      { x: 900, y: 400, width: 200, height: 18, style: 'burger' },
+      { x: 1100, y: 340, width: 36, height: 18, style: 'sausage2' },
+      { x: 1200, y: 300, width: 200, height: 18, style: 'sausage' },
     ],
     diamonds: [
       { x: 370, y: 370 }, { x: 670, y: 270 },
@@ -36,13 +40,15 @@ const Levels = {
     height: 600,
     spawn: { cat: { x: 50, y: 450 }, dog: { x: 100, y: 450 } },
     platforms: [
-      { x: 0, y: 550, width: 2000, height: 50, type: 'grass', color: '#555' },
-      { x: 250, y: 400, width: 150, height: 20, type: 'stone', color: '#777' },
-      { x: 500, y: 300, width: 150, height: 20, type: 'stone', color: '#777' },
-      { x: 750, y: 200, width: 150, height: 20, type: 'stone', color: '#777' },
-      { x: 1000, y: 300, width: 150, height: 20, type: 'stone', color: '#777' },
-      { x: 1250, y: 400, width: 150, height: 20, type: 'stone', color: '#777' },
-      { x: 1500, y: 300, width: 150, height: 20, type: 'stone', color: '#777' },
+      { x: 0, y: 550, width: 2000, height: 18, style: 'floor' },
+      { x: 250, y: 400, width: 150, height: 18, style: 'burger' },
+      { x: 440, y: 340, width: 36, height: 18, style: 'sausage2' },
+      { x: 500, y: 300, width: 150, height: 18, style: 'sausage' },
+      { x: 750, y: 200, width: 150, height: 18, style: 'burger' },
+      { x: 1000, y: 300, width: 150, height: 18, style: 'sausage' },
+      { x: 1170, y: 350, width: 36, height: 18, style: 'sausage2' },
+      { x: 1250, y: 400, width: 150, height: 18, style: 'burger' },
+      { x: 1500, y: 300, width: 150, height: 18, style: 'sausage' },
     ],
     diamonds: [
       { x: 310, y: 370 }, { x: 560, y: 270 },
@@ -60,14 +66,16 @@ const Levels = {
     height: 600,
     spawn: { cat: { x: 50, y: 450 }, dog: { x: 100, y: 450 } },
     platforms: [
-      { x: 0, y: 550, width: 2400, height: 50, type: 'grass', color: '#555' },
-      { x: 200, y: 400, width: 150, height: 20, type: 'stone', color: '#777' },
-      { x: 450, y: 300, width: 150, height: 20, type: 'stone', color: '#777' },
-      { x: 700, y: 200, width: 150, height: 20, type: 'stone', color: '#777' },
-      { x: 1000, y: 300, width: 150, height: 20, type: 'stone', color: '#777' },
-      { x: 1300, y: 400, width: 150, height: 20, type: 'stone', color: '#777' },
-      { x: 1600, y: 300, width: 150, height: 20, type: 'stone', color: '#777' },
-      { x: 1900, y: 200, width: 150, height: 20, type: 'stone', color: '#777' },
+      { x: 0, y: 550, width: 2400, height: 18, style: 'floor' },
+      { x: 200, y: 400, width: 150, height: 18, style: 'burger' },
+      { x: 380, y: 340, width: 36, height: 18, style: 'sausage2' },
+      { x: 450, y: 300, width: 150, height: 18, style: 'sausage' },
+      { x: 700, y: 200, width: 150, height: 18, style: 'burger' },
+      { x: 1000, y: 300, width: 150, height: 18, style: 'sausage' },
+      { x: 1200, y: 350, width: 36, height: 18, style: 'sausage2' },
+      { x: 1300, y: 400, width: 150, height: 18, style: 'burger' },
+      { x: 1600, y: 300, width: 150, height: 18, style: 'sausage' },
+      { x: 1900, y: 200, width: 150, height: 18, style: 'burger' },
     ],
     diamonds: [
       { x: 260, y: 370 }, { x: 510, y: 270 },

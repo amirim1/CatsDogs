@@ -35,6 +35,15 @@ const App = {
       { id: 'door_closed', src: 'assets/kenney_new-platformer-pack-1.1/Sprites/Tiles/Default/door_closed.png' },
       { id: 'door_open', src: 'assets/kenney_new-platformer-pack-1.1/Sprites/Tiles/Default/door_open.png' },
       { id: 'background', src: 'assets/kenney_new-platformer-pack-1.1/Sprites/Backgrounds/Default/background_solid_grass.png' },
+      // Floor sprites
+      { id: 'burger_left', src: 'assets/floor/burger1of3.png' },
+      { id: 'burger_mid', src: 'assets/floor/burger2of3.png' },
+      { id: 'burger_right', src: 'assets/floor/burger3of3.png' },
+      { id: 'sausage_left', src: 'assets/floor/sausage1of3.png' },
+      { id: 'sausage_mid', src: 'assets/floor/sausage20f3.png' },
+      { id: 'sausage_right', src: 'assets/floor/sausage30f3.png' },
+      { id: 'sausage2_left', src: 'assets/floor/sausage1of2.png' },
+      { id: 'sausage2_right', src: 'assets/floor/sausage2of2.png' },
     ];
 
     let loaded = 0;
