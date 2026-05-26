@@ -4,7 +4,6 @@ const App = {
   state: 'menu',
   currentLevel: 1,
   assets: {},
-  sounds: {},
   assetsLoaded: false,
 
   init() {
@@ -14,7 +13,6 @@ const App = {
     window.addEventListener('resize', () => this.resize());
     Game.init();
     this.loadAssets();
-    this.loadSounds();
     this.loop();
   },
 
@@ -58,29 +56,18 @@ const App = {
     });
   },
 
-  loadSounds() {
-    const list = [
-      { id: 'jump', src: 'assets/kenney_new-platformer-pack-1.1/Sounds/sfx_jump.ogg' },
-      { id: 'gem', src: 'assets/kenney_new-platformer-pack-1.1/Sounds/sfx_gem.ogg' },
-      { id: 'hurt', src: 'assets/kenney_new-platformer-pack-1.1/Sounds/sfx_hurt.ogg' },
-      { id: 'win', src: 'assets/kenney_new-platformer-pack-1.1/Sounds/sfx_magic.ogg' },
-    ];
-
-    list.forEach(item => {
-      const audio = new Audio();
-      audio.preload = 'auto';
-      audio.oncanplaythrough = () => { this.sounds[item.id] = audio; };
-      audio.onerror = () => {};
-      audio.src = item.src;
-    });
-  },
-
   playSound(id) {
     try {
-      if (this.sounds[id]) {
-        const s = this.sounds[id].cloneNode();
-        s.volume = 0.3;
-        s.play().catch(() => {});
+      const srcMap = {
+        jump: 'assets/kenney_new-platformer-pack-1.1/Sounds/sfx_jump.ogg',
+        gem: 'assets/kenney_new-platformer-pack-1.1/Sounds/sfx_gem.ogg',
+        hurt: 'assets/kenney_new-platformer-pack-1.1/Sounds/sfx_hurt.ogg',
+        win: 'assets/kenney_new-platformer-pack-1.1/Sounds/sfx_magic.ogg',
+      };
+      if (srcMap[id]) {
+        const a = new Audio(srcMap[id]);
+        a.volume = 0.3;
+        a.play().catch(() => {});
       }
     } catch (_) {}
   },
