@@ -12,15 +12,22 @@ const UI = {
 
     ctx.fillText(`Level ${App.currentLevel}`, 12, 18);
 
+    // Key status
+    ctx.fillStyle = Game.keyCollected ? '#f1c40f' : '#666';
+    ctx.fillText(Game.keyCollected ? 'KEY ✓' : 'KEY ?', 120, 18);
+
+    // Diamonds count
     const total = Game.diamonds.length;
     const collected = Game.diamonds.filter(d => d.collected).length;
     ctx.fillStyle = '#00d4ff';
-    ctx.fillText(`Diamonds: ${collected}/${total}`, 140, 18);
+    ctx.fillText(`♦ ${collected}/${total}`, 210, 18);
 
+    // Controls hint
     ctx.fillStyle = '#e74c3c';
-    ctx.fillText('[WASD]', w - 220, 18);
+    ctx.font = '12px monospace';
+    ctx.fillText('Cat [WASD]', w - 260, 18);
     ctx.fillStyle = '#3498db';
-    ctx.fillText('[Arrows]', w - 120, 18);
+    ctx.fillText('Dog [Arrows]', w - 140, 18);
   },
 
   drawMenu(ctx) {
@@ -42,15 +49,16 @@ const UI = {
 
     ctx.font = '14px monospace';
     ctx.fillStyle = '#e74c3c';
-    ctx.fillText('Cat: WASD + W to jump', w / 2, h / 2 + 30);
+    ctx.fillText('Cat: WASD + W jump', w / 2, h / 2 + 30);
     ctx.fillStyle = '#3498db';
-    ctx.fillText('Dog: Arrow keys + Up to jump', w / 2, h / 2 + 52);
+    ctx.fillText('Dog: Arrow keys + Up jump', w / 2, h / 2 + 52);
     ctx.fillStyle = '#aaa';
-    ctx.fillText('Collect all diamonds and reach the door!', w / 2, h / 2 + 80);
+    ctx.fillText('Find the key, then each reach their own door!', w / 2, h / 2 + 80);
+    ctx.fillText('Diamonds are bonus points.', w / 2, h / 2 + 100);
 
     ctx.fillStyle = '#2ecc71';
     ctx.font = 'bold 22px monospace';
-    ctx.fillText('Press ENTER to start', w / 2, h / 2 + 130);
+    ctx.fillText('Press ENTER to start', w / 2, h / 2 + 140);
   },
 
   drawWin(ctx) {

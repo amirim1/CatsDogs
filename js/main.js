@@ -44,6 +44,9 @@ const App = {
       { id: 'sausage_right', src: 'assets/floor/sausage30f3.png' },
       { id: 'sausage2_left', src: 'assets/floor/sausage1of2.png' },
       { id: 'sausage2_right', src: 'assets/floor/sausage2of2.png' },
+      { id: 'key_yellow', src: 'assets/kenney_new-platformer-pack-1.1/Sprites/Tiles/Default/key_yellow.png' },
+      { id: 'door_closed_top', src: 'assets/kenney_new-platformer-pack-1.1/Sprites/Tiles/Default/door_closed_top.png' },
+      { id: 'door_open_top', src: 'assets/kenney_new-platformer-pack-1.1/Sprites/Tiles/Default/door_open_top.png' },
     ];
 
     let loaded = 0;

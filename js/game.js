@@ -4,6 +4,8 @@ const Game = {
   diamonds: [],
   doors: [],
   enemies: [],
+  key: null,
+  keyCollected: false,
   camera: { x: 0, y: 0 },
   keys: {},
   levelWidth: 0,
@@ -39,6 +41,9 @@ const Game = {
     this.levelHeight = data.height;
     this.platforms = data.platforms || [];
     this.doors = data.doors || [];
+    this.keyCollected = false;
+
+    this.key = data.key ? new Key(data.key.x, data.key.y) : null;
 
     this.enemies = [];
     if (data.enemies) {
@@ -68,6 +73,18 @@ const Game = {
     this.enemies.forEach(e => e.update());
     this.players.forEach(p => p.update(this));
 
+    // Key collection
+    if (this.key && !this.keyCollected) {
+      this.players.forEach(p => {
+        if (this.checkCollision(p, this.key)) {
+          this.keyCollected = true;
+          this.key.collected = true;
+          this.doors.forEach(d => d.isOpen = true);
+        }
+      });
+    }
+
+    // Diamond collection (optional, score only)
     this.players.forEach(p => {
       this.diamonds.forEach(d => {
         if (!d.collected && this.checkCollision(p, d)) {
@@ -78,16 +95,16 @@ const Game = {
       });
     });
 
-    this.doors.forEach(door => {
-      door.isOpen = this.diamonds.every(d => d.collected);
-    });
-
-    if (this.players.every(p => {
-      return this.doors.some(d => d.isOpen && this.checkCollision(p, d));
-    })) {
-      App.nextLevel();
+    // Win check: key collected + each player at their own door
+    if (this.keyCollected) {
+      const catAtDoor = this.doors.some(d => d.owner === 'cat' && this.checkCollision(this.players[0], d));
+      const dogAtDoor = this.doors.some(d => d.owner === 'dog' && this.checkCollision(this.players[1], d));
+      if (catAtDoor && dogAtDoor) {
+        App.nextLevel();
+      }
     }
 
+    // Enemy collision
     this.players.forEach(p => {
       this.enemies.forEach(e => {
         if (this.checkCollision(p, e)) {
@@ -115,6 +132,7 @@ const Game = {
     this.platforms.forEach(p => this.drawPlatform(ctx, p));
     this.doors.forEach(d => this.drawDoor(ctx, d));
     this.diamonds.forEach(d => d.draw(ctx));
+    if (this.key && !this.keyCollected) this.key.draw(ctx);
     this.enemies.forEach(e => e.draw(ctx));
     this.players.forEach(p => p.draw(ctx));
 
@@ -139,7 +157,15 @@ const Game = {
 
   drawPlatform(ctx, p) {
     if (p.style === 'floor') {
-      this.drawTiledPlatform(ctx, p, 'sausage_mid');
+      // Floor: monolithic wall from surface down to level bottom
+      const tiles = ['floor_clean_01', 'floor_clean_02', 'floor_clean_03', 'floor_clean_04'];
+      const tileIdx = App.currentLevel % 2 === 0 ? 'choco' : 'clean';
+      const tileSet = {
+        choco: ['floor_choco_01', 'floor_choco_02', 'floor_choco_03', 'floor_choco_04'],
+        clean: ['floor_clean_01', 'floor_clean_02', 'floor_clean_03', 'floor_clean_04'],
+      };
+      const set = tileSet[tileIdx];
+      this.drawFloorColumn(ctx, p, set);
       return;
     }
 
@@ -174,6 +200,26 @@ const Game = {
     }
   },
 
+  drawFloorColumn(ctx, p, tiles) {
+    const tileH = 18;
+    let ty = p.y;
+    let idx = 0;
+    while (ty < p.y + p.height) {
+      const img = App.assets[tiles[idx % tiles.length]];
+      if (img && img.complete && img.naturalWidth > 0) {
+        for (let tx = p.x; tx < p.x + p.width; tx += img.width) {
+          const tw = Math.min(img.width, p.x + p.width - tx);
+          ctx.drawImage(img, tx, ty, tw, tileH);
+        }
+      } else {
+        ctx.fillStyle = '#555';
+        ctx.fillRect(p.x, ty, p.width, tileH);
+      }
+      ty += tileH;
+      idx++;
+    }
+  },
+
   drawSectionedPlatform(ctx, p, leftKey, midKey, rightKey) {
     const left = App.assets[leftKey];
     const right = App.assets[rightKey];
@@ -181,20 +227,6 @@ const Game = {
       const h = left.height;
       ctx.drawImage(left, p.x, p.y, left.width, h);
       ctx.drawImage(right, p.x + p.width - right.width, p.y, Math.min(right.width, p.width - left.width), h);
-    } else {
-      ctx.fillStyle = '#555';
-      ctx.fillRect(p.x, p.y, p.width, p.height);
-    }
-  },
-
-  drawTiledPlatform(ctx, p, tileKey) {
-    const img = App.assets[tileKey];
-    if (img && img.complete && img.naturalWidth > 0) {
-      const w = img.width;
-      const h = img.height;
-      for (let x = p.x; x < p.x + p.width; x += w) {
-        ctx.drawImage(img, x, p.y, Math.min(w, p.x + p.width - x), h);
-      }
     } else {
       ctx.fillStyle = '#555';
       ctx.fillRect(p.x, p.y, p.width, p.height);
@@ -213,6 +245,18 @@ const Game = {
       ctx.fillStyle = d.isOpen ? '#2ecc71' : '#7f8c8d';
       ctx.fillRect(d.x, d.y, d.width, d.height);
     }
+
+    // Owner label
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 12px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(d.owner, d.x + d.width / 2, d.y - 6);
+
+    // Colored dot
+    ctx.fillStyle = d.owner === 'cat' ? '#e74c3c' : '#3498db';
+    ctx.beginPath();
+    ctx.arc(d.x + d.width / 2, d.y - 14, 5, 0, Math.PI * 2);
+    ctx.fill();
   },
 
   checkCollision(a, b) {

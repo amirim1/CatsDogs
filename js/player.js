@@ -2,13 +2,17 @@ class Player {
   constructor(x, y, type, color) {
     this.x = x;
     this.y = y;
-    this.width = 36;
-    this.height = 48;
+    this.width = 72;
+    this.height = 96;
     this.vx = 0;
     this.vy = 0;
-    this.speed = 4;
-    this.jumpPower = -12;
+    this.accel = 0.4;
+    this.friction = 0.88;
+    this.maxSpeed = 5;
+    this.jumpPower = -14;
+    this.gravity = 0.35;
     this.onGround = false;
+    this.jumpHeld = false;
     this.type = type;
     this.color = color;
     this.score = 0;
@@ -18,29 +22,50 @@ class Player {
     const keys = game.keys;
 
     if (this.type === 'cat') {
-      if (keys['KeyA']) this.vx = -this.speed;
-      else if (keys['KeyD']) this.vx = this.speed;
-      else this.vx *= 0.7;
+      if (keys['KeyA']) this.vx -= this.accel;
+      else if (keys['KeyD']) this.vx += this.accel;
+      else this.vx *= this.friction;
 
-      if (keys['KeyW'] && this.onGround) {
-        this.vy = this.jumpPower;
-        this.onGround = false;
-        App.playSound('jump');
+      if (keys['KeyW']) {
+        if (this.onGround) {
+          this.vy = this.jumpPower;
+          this.onGround = false;
+          this.jumpHeld = true;
+          App.playSound('jump');
+        } else if (this.jumpHeld && this.vy < 0) {
+          this.vy += this.gravity * 0.4;
+        }
+      } else {
+        this.jumpHeld = false;
       }
     } else {
-      if (keys['ArrowLeft']) this.vx = -this.speed;
-      else if (keys['ArrowRight']) this.vx = this.speed;
-      else this.vx *= 0.7;
+      if (keys['ArrowLeft']) this.vx -= this.accel;
+      else if (keys['ArrowRight']) this.vx += this.accel;
+      else this.vx *= this.friction;
 
-      if (keys['ArrowUp'] && this.onGround) {
-        this.vy = this.jumpPower;
-        this.onGround = false;
-        App.playSound('jump');
+      if (keys['ArrowUp']) {
+        if (this.onGround) {
+          this.vy = this.jumpPower;
+          this.onGround = false;
+          this.jumpHeld = true;
+          App.playSound('jump');
+        } else if (this.jumpHeld && this.vy < 0) {
+          this.vy += this.gravity * 0.4;
+        }
+      } else {
+        this.jumpHeld = false;
       }
     }
 
-    this.vy += 0.45;
-    if (this.vy > 15) this.vy = 15;
+    if (Math.abs(this.vx) > this.maxSpeed) {
+      this.vx = Math.sign(this.vx) * this.maxSpeed;
+    }
+    if (Math.abs(this.vx) < 0.1) this.vx = 0;
+
+    if (!this.jumpHeld || this.vy >= 0) {
+      this.vy += this.gravity;
+    }
+    if (this.vy > 18) this.vy = 18;
 
     this.x += this.vx;
     game.platforms.forEach(p => {
@@ -90,14 +115,14 @@ class Player {
       ctx.fillStyle = this.color;
       ctx.fillRect(this.x, this.y, this.width, this.height);
       ctx.fillStyle = '#fff';
-      ctx.fillRect(this.x + 6, this.y + 8, 6, 6);
-      ctx.fillRect(this.x + this.width - 12, this.y + 8, 6, 6);
+      ctx.fillRect(this.x + 14, this.y + 18, 12, 12);
+      ctx.fillRect(this.x + this.width - 26, this.y + 18, 12, 12);
     }
 
     ctx.fillStyle = '#fff';
-    ctx.font = '10px monospace';
+    ctx.font = '14px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(this.type, this.x + this.width / 2, this.y - 5);
+    ctx.fillText(this.type, this.x + this.width / 2, this.y - 8);
   }
 
   getSpriteKey() {
