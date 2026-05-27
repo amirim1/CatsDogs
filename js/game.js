@@ -220,37 +220,34 @@
   },
 
   drawFloorColumn(ctx, p, set, tileSize) {
-    const setMap = {
-      choco: { left: 'floor_choco_01', mid1: 'floor_choco_02', mid2: 'floor_choco_03', right: 'floor_choco_04' },
-      clean: { left: 'floor_clean_01', mid1: 'floor_clean_02', mid2: 'floor_clean_03', right: 'floor_clean_04' },
-      pink:  { left: 'pinkfloor1of4',  mid1: 'pinkfloor2of4',  mid2: 'pinkfloor3of4',  right: 'pinkfloor4of4'  },
-    };
-    const names = setMap[set] || setMap.choco;
-    const left = App.assets[names.left];
-    const mid1 = App.assets[names.mid1];
-    const mid2 = App.assets[names.mid2];
-    const right = App.assets[names.right];
+    const top = { left: 'pinkfloor2of4',  mid: 'pinkfloor3of4',  right: 'pinkfloor4of4'  };
+    const mid = { left: 'floor_choco_02', mid: 'floor_choco_03', right: 'floor_choco_04' };
+    const bot = { left: 'floor_clean_02', mid: 'floor_clean_03', right: 'floor_clean_04' };
 
     let ty = p.y;
     let row = 0;
 
     while (ty < p.y + p.height) {
+      const layer = row === 0 ? top : (row <= 4 ? mid : bot);
+      const left = App.assets[layer.left];
+      const tile = App.assets[layer.mid];
+      const right = App.assets[layer.right];
+
       if (row === 0) {
         for (let tx = p.x; tx < p.x + p.width; tx += tileSize) {
           const tw = Math.min(tileSize, p.x + p.width - tx);
-          let tile;
-          if (tx === p.x) tile = left;
-          else if (tx + tileSize >= p.x + p.width) tile = right;
-          else tile = (Math.floor((tx - p.x) / tileSize) % 2 === 0) ? mid1 : mid2;
-          if (tile && tile.complete && tile.naturalWidth > 0) {
-            ctx.drawImage(tile, tx, ty, tw, tileSize);
+          let t;
+          if (tx === p.x) t = left;
+          else if (tx + tileSize >= p.x + p.width) t = right;
+          else t = tile;
+          if (t && t.complete && t.naturalWidth > 0) {
+            ctx.drawImage(t, tx, ty, tw, tileSize);
           } else {
             ctx.fillStyle = '#444';
             ctx.fillRect(tx, ty, tw, tileSize);
           }
         }
       } else {
-        const tile = mid1;
         if (tile && tile.complete && tile.naturalWidth > 0) {
           for (let tx = p.x; tx < p.x + p.width; tx += tileSize) {
             const tw = Math.min(tileSize, p.x + p.width - tx);
