@@ -177,10 +177,8 @@ const Game = {
     const tileSize = 36;
 
     if (p.style === 'floor') {
-      const tileSet = App.currentLevel % 2 === 0
-        ? ['floor_choco_01', 'floor_choco_02', 'floor_choco_03', 'floor_choco_04']
-        : ['floor_clean_01', 'floor_clean_02', 'floor_clean_03', 'floor_clean_04'];
-      this.drawFloorColumn(ctx, p, tileSet, tileSize);
+      const set = p.floorSet || 'choco';
+      this.drawFloorColumn(ctx, p, set, tileSize);
       return;
     }
 
@@ -213,31 +211,38 @@ const Game = {
     }
   },
 
-  drawFloorColumn(ctx, p, tiles, tileSize) {
-    const pink1 = App.assets['pinkfloor1of4'];
-    const pink2 = App.assets['pinkfloor2of4'];
-    const pink3 = App.assets['pinkfloor3of4'];
-    const pink4 = App.assets['pinkfloor4of4'];
-
-    const usePink = pink1 && pink1.complete && pink1.naturalWidth > 0;
+  drawFloorColumn(ctx, p, set, tileSize) {
+    const setMap = {
+      choco: { left: 'floor_choco_01', mid1: 'floor_choco_02', mid2: 'floor_choco_03', right: 'floor_choco_04' },
+      clean: { left: 'floor_clean_01', mid1: 'floor_clean_02', mid2: 'floor_clean_03', right: 'floor_clean_04' },
+      pink:  { left: 'pinkfloor1of4',  mid1: 'pinkfloor2of4',  mid2: 'pinkfloor3of4',  right: 'pinkfloor4of4'  },
+    };
+    const names = setMap[set] || setMap.choco;
+    const left = App.assets[names.left];
+    const mid1 = App.assets[names.mid1];
+    const mid2 = App.assets[names.mid2];
+    const right = App.assets[names.right];
 
     let ty = p.y;
-    let idx = 0;
+    let row = 0;
 
     while (ty < p.y + p.height) {
-      if (idx === 0 && usePink) {
-        // Top row: pinkfloor (left + mid + mid + right)
+      if (row === 0) {
         for (let tx = p.x; tx < p.x + p.width; tx += tileSize) {
           const tw = Math.min(tileSize, p.x + p.width - tx);
           let tile;
-          if (tx === p.x) tile = pink1;
-          else if (tx + tileSize >= p.x + p.width) tile = pink4;
-          else tile = (Math.floor((tx - p.x) / tileSize) % 2 === 0) ? pink2 : pink3;
-          ctx.drawImage(tile, tx, ty, tw, tileSize);
+          if (tx === p.x) tile = left;
+          else if (tx + tileSize >= p.x + p.width) tile = right;
+          else tile = (Math.floor((tx - p.x) / tileSize) % 2 === 0) ? mid1 : mid2;
+          if (tile && tile.complete && tile.naturalWidth > 0) {
+            ctx.drawImage(tile, tx, ty, tw, tileSize);
+          } else {
+            ctx.fillStyle = '#444';
+            ctx.fillRect(tx, ty, tw, tileSize);
+          }
         }
       } else {
-        // Below: choco/clean repeating
-        const tile = App.assets[tiles[idx % tiles.length]];
+        const tile = mid1;
         if (tile && tile.complete && tile.naturalWidth > 0) {
           for (let tx = p.x; tx < p.x + p.width; tx += tileSize) {
             const tw = Math.min(tileSize, p.x + p.width - tx);
@@ -249,7 +254,7 @@ const Game = {
         }
       }
       ty += tileSize;
-      idx++;
+      row++;
     }
   },
 

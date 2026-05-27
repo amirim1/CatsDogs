@@ -17,9 +17,13 @@ const Levels = {
                       : num === 2 ? 5 + Math.floor(Math.random() * 3)
                       : 8 + Math.floor(Math.random() * 3);
 
+    const floorSets = ['choco', 'clean', 'pink'];
+    const floorSet = floorSets[num % 3];
+
     const level = {
       width: 800 + platformCount * 200,
       height: 720,
+      floorSet: floorSet,
       spawn: { cat: { x: 80, y: 540 }, dog: { x: 180, y: 540 } },
       platforms: [],
       diamonds: [],
@@ -30,12 +34,12 @@ const Levels = {
 
     const groundY = 648;
     const groundH = level.height - groundY;
-    level.platforms.push({ x: 0, y: groundY, width: level.width, height: groundH, style: 'floor' });
+    level.platforms.push({ x: 0, y: groundY, width: level.width, height: groundH, style: 'floor', floorSet: floorSet });
 
     const styles = ['burger', 'sausage'];
     let px = 250;
-    let py = 460;
-    const maxStepUp = -100;
+    let py = 590;
+    const maxStepUp = -80;
     const maxStepDown = 70;
 
     for (let i = 0; i < platformCount; i++) {
@@ -86,14 +90,16 @@ const Levels = {
       const enemyCount = 2 + Math.floor(Math.random() * 2);
       const patterns = ['patrol', 'rush', 'random'];
       for (let e = 0; e < enemyCount; e++) {
-        const ei = 2 + Math.floor(Math.random() * (platformCount - 3));
-        const plat = level.platforms[ei] || level.platforms[level.platforms.length - 1];
-        const patrolW = 120 + Math.floor(Math.random() * 80);
+        const ei = Math.floor(Math.random() * level.platforms.length);
+        const plat = level.platforms[ei] || level.platforms[0];
+        const patrolW = Math.min(120 + Math.floor(Math.random() * 80), plat.width - 20);
+        const cx = plat.x + plat.width / 2;
+        const halfW = patrolW / 2;
         level.enemies.push({
-          x: plat.x + plat.width / 2,
+          x: cx,
           y: plat.y - 40,
-          patrolLeft: plat.x + plat.width / 2 - patrolW / 2,
-          patrolRight: plat.x + plat.width / 2 + patrolW / 2,
+          patrolLeft: Math.max(plat.x, cx - halfW),
+          patrolRight: Math.min(plat.x + plat.width, cx + halfW),
           speed: 0.8 + Math.random() * 0.7,
           pattern: patterns[e % patterns.length],
         });
