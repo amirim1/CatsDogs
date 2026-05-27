@@ -1,4 +1,4 @@
-const Game = {
+﻿const Game = {
   players: [],
   platforms: [],
   diamonds: [],
@@ -114,30 +114,30 @@ const Game = {
       }
     }
 
-    // Enemy collision — only one hit per frame per player
+    // Enemy collision вЂ” only one hit per frame per player
     this.players.forEach(p => {
       if (p.lives <= 0 || p.flicker > 0) return;
       if (this.enemies.some(e => this.checkCollision(p, e))) {
         p.lives--;
-        p.flicker = 45;
+        p.flicker = 120;
         App.playSound('hurt');
       }
     });
 
     // Check if both dead
-    if (this.players.every(p => p.lives <= 0)) {
+    if (this.players.some(p => p.lives <= 0)) {
       App.state = 'fail';
     }
 
-    // Fall off — punish only the falling player
+    // Fall off вЂ” punish only the falling player
     this.players.forEach(p => {
       if (p.y > this.levelHeight + 50 && p.lives > 0) {
         p.lives--;
-        p.flicker = 45;
+        p.flicker = 120;
         App.playSound('hurt');
       }
     });
-    if (this.players.every(p => p.lives <= 0)) {
+    if (this.players.some(p => p.lives <= 0)) {
       App.state = 'fail';
     }
 
