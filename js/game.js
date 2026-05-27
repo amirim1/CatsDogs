@@ -224,11 +224,12 @@
     const mid = { left: 'floor_choco_02', mid: 'floor_choco_03', right: 'floor_choco_04' };
     const bot = { left: 'floor_clean_02', mid: 'floor_clean_03', right: 'floor_clean_04' };
 
+    const totalRows = Math.floor(p.height / tileSize);
     let ty = p.y;
     let row = 0;
 
     while (ty < p.y + p.height) {
-      const layer = row === 0 ? top : (row <= 4 ? mid : bot);
+      const layer = row === 0 ? top : (row === totalRows - 1 ? bot : mid);
       const left = App.assets[layer.left];
       const tile = App.assets[layer.mid];
       const right = App.assets[layer.right];
