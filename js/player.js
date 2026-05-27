@@ -74,15 +74,14 @@
 
     this.x += this.vx;
     game.platforms.forEach(p => {
+      if (p.style !== 'floor') return;
       const overlapY = Math.min(this.y + this.height, p.y + p.height) - Math.max(this.y, p.y);
       if (overlapY <= 0) return;
       if (game.checkCollision(this, p)) {
         const feetY = this.y + this.height;
-        const headY = this.y;
         if (feetY >= p.y && feetY - p.y <= 12) {
           this.y = p.y - this.height;
           this.vy = 0.5;
-        } else if (headY >= p.y + p.height) {
         } else {
           if (this.vx > 0) this.x = p.x - this.width;
           else if (this.vx < 0) this.x = p.x + p.width;
