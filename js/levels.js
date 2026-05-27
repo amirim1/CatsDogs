@@ -1,8 +1,12 @@
-﻿const Levels = {
+const Levels = {
   _last: null,
 
+  count() {
+    return 5;
+  },
+
   generate(num) {
-    const level = this._build(num);
+    const level = this._build(Math.max(1, Math.min(num, this.count())));
     this._last = level;
     return level;
   },
@@ -12,101 +16,120 @@
   },
 
   _build(num) {
-    const isHard = num >= 3;
-
-    const floorSets = ['choco', 'clean', 'pink'];
-    const floorSet = floorSets[num % 3];
-
+    const width = 1920;
+    const height = 1080;
+    const groundY = 952;
+    const playerH = 76;
+    const floorSets = ['choco', 'clean', 'pink', 'choco', 'pink'];
     const level = {
-      width: 1920,
-      height: 1080,
-      floorSet: floorSet,
-      spawn: { cat: { x: 120, y: 810 }, dog: { x: 270, y: 810 } },
-      platforms: [],
+      width,
+      height,
+      floorSet: floorSets[num - 1] || 'choco',
+      spawn: {
+        cat: { x: 120, y: groundY - playerH },
+        dog: { x: 210, y: groundY - playerH },
+      },
+      platforms: [
+        { x: 0, y: groundY, width, height: 360, style: 'floor', floorSet: floorSets[num - 1] || 'choco' },
+      ],
       diamonds: [],
-      doors: [],
+      doors: [
+        { x: width - 245, y: groundY - 96, width: 52, height: 96, owner: 'cat' },
+        { x: width - 160, y: groundY - 96, width: 52, height: 96, owner: 'dog' },
+      ],
       enemies: [],
       key: null,
     };
 
-    const groundY = 972;
-    const groundH = 500;
-    level.platforms.push({ x: 0, y: groundY, width: level.width, height: groundH, style: 'floor', floorSet: floorSet });
-
-    const platformLayouts = {
-      1: [
-        { x: 300, y: 840 },
-        { x: 570, y: 765 },
-        { x: 840, y: 840 },
-        { x: 1110, y: 765 },
-      ],
-      2: [
-        { x: 270, y: 795 },
-        { x: 570, y: 705 },
-        { x: 870, y: 795 },
-        { x: 1170, y: 705 },
-        { x: 1470, y: 795 },
-      ],
-      3: [
-        { x: 240, y: 825 },
-        { x: 495, y: 720 },
-        { x: 750, y: 615 },
-        { x: 1005, y: 720 },
-        { x: 1260, y: 615 },
-        { x: 1515, y: 825 },
-      ],
+    const addPlatform = (x, y, w = 200, style = 'burger') => {
+      const platform = { x, y, width: w, height: 36, style };
+      level.platforms.push(platform);
+      return platform;
     };
-    const positions = platformLayouts[num] || platformLayouts[1];
-    const platformCount = positions.length;
-
-    const styles = ['burger', 'sausage'];
-    positions.forEach((pos, i) => {
-      const style = styles[i % styles.length];
-      level.platforms.push({ x: pos.x, y: pos.y, width: 130, height: 36, style: style });
-      if (Math.random() < 0.5) {
-        level.diamonds.push({ x: pos.x + 30 + Math.floor(Math.random() * 70), y: pos.y - 30 });
-      }
-    });
-
-    for (let i = 0; i < 2 + num; i++) {
-      level.diamonds.push({
-        x: 300 + Math.floor(Math.random() * (level.width - 600)),
-        y: groundY - 30,
+    const addDiamond = (x, y) => level.diamonds.push({ x, y });
+    const addEnemyOn = (platform, speed = 1.25, pattern = 'patrol', inset = 12) => {
+      level.enemies.push({
+        x: platform.x + 16,
+        y: platform.y - 40,
+        patrolLeft: platform.x + inset,
+        patrolRight: platform.x + platform.width - inset,
+        speed,
+        pattern,
       });
+    };
+    const putKey = (platform) => {
+      level.key = { x: platform.x + platform.width / 2 - 15, y: platform.y - 44 };
+    };
+
+    if (num === 1) {
+      const p1 = addPlatform(330, 830, 220, 'burger');
+      const p2 = addPlatform(650, 728, 220, 'sausage');
+      const p3 = addPlatform(970, 626, 220, 'burger');
+      const p4 = addPlatform(1290, 738, 240, 'sausage');
+      putKey(p3);
+      [p1, p2, p3, p4].forEach(p => addDiamond(p.x + p.width / 2 - 12, p.y - 34));
+      addDiamond(470, groundY - 34);
+      addDiamond(1500, groundY - 34);
     }
 
-    const doorY = groundY - 96;
-    const margin = 120;
-    const sectionW = (level.width - margin * 2) / 3;
-    const catX = margin + Math.floor(Math.random() * (sectionW - 72));
-    const dogX = margin + sectionW * 2 + Math.floor(Math.random() * (sectionW - 72));
-    level.doors.push(
-      { x: catX, y: doorY, width: 48, height: 96, isOpen: false, owner: 'cat' },
-      { x: dogX, y: doorY, width: 48, height: 96, isOpen: false, owner: 'dog' },
-    );
+    if (num === 2) {
+      const p1 = addPlatform(300, 820, 210, 'sausage');
+      const p2 = addPlatform(600, 710, 230, 'burger');
+      const p3 = addPlatform(930, 600, 230, 'sausage');
+      const p4 = addPlatform(1260, 710, 230, 'burger');
+      const p5 = addPlatform(1480, 840, 210, 'sausage2');
+      putKey(p3);
+      [p1, p2, p3, p4, p5].forEach((p, i) => addDiamond(p.x + 45 + (i % 2) * 70, p.y - 34));
+      addDiamond(760, groundY - 34);
+      addDiamond(1160, groundY - 34);
+      addEnemyOn({ x: 790, y: groundY, width: 280 }, 1.05, 'patrol', 0);
+    }
 
-    const midIdx = Math.floor(platformCount / 2);
-    const keyPlat = level.platforms[midIdx + 1] || level.platforms[level.platforms.length - 1];
-    level.key = { x: keyPlat.x + keyPlat.width / 2 - 12, y: keyPlat.y - 36 };
+    if (num === 3) {
+      const p1 = addPlatform(260, 820, 210, 'burger');
+      const p2 = addPlatform(540, 700, 210, 'sausage');
+      const p3 = addPlatform(830, 580, 240, 'burger');
+      const p4 = addPlatform(1140, 700, 210, 'sausage');
+      const p5 = addPlatform(1430, 820, 230, 'burger');
+      const safe = addPlatform(830, 840, 240, 'sausage2');
+      putKey(p3);
+      [p1, p2, p3, p4, p5, safe].forEach((p, i) => addDiamond(p.x + p.width / 2 - 12 + (i % 2 ? 35 : -35), p.y - 34));
+      addEnemyOn(safe, 1.25, 'rush');
+      addEnemyOn({ x: 1180, y: groundY, width: 360 }, 1.15, 'patrol', 0);
+    }
 
-    if (isHard) {
-      const enemyCount = 2 + Math.floor(Math.random() * 2);
-      const patterns = ['patrol', 'rush', 'random'];
-      for (let e = 0; e < enemyCount; e++) {
-        const ei = Math.floor(Math.random() * level.platforms.length);
-        const plat = level.platforms[ei] || level.platforms[0];
-        const patrolW = Math.min(120 + Math.floor(Math.random() * 80), plat.width - 20);
-        const cx = plat.x + plat.width / 2;
-        const halfW = patrolW / 2;
-        level.enemies.push({
-          x: cx,
-          y: plat.y - 40,
-          patrolLeft: Math.max(plat.x, cx - halfW),
-          patrolRight: Math.min(plat.x + plat.width, cx + halfW),
-          speed: 0.3 + Math.random() * 0.3,
-          pattern: patterns[e % patterns.length],
-        });
-      }
+    if (num === 4) {
+      const p1 = addPlatform(250, 815, 190, 'sausage');
+      const p2 = addPlatform(520, 705, 205, 'burger');
+      const p3 = addPlatform(800, 595, 220, 'sausage');
+      const p4 = addPlatform(1080, 485, 230, 'burger');
+      const p5 = addPlatform(1370, 610, 220, 'sausage');
+      const p6 = addPlatform(1510, 790, 240, 'burger');
+      const low = addPlatform(700, 850, 290, 'sausage2');
+      putKey(p4);
+      [p1, p2, p3, p4, p5, p6, low].forEach((p, i) => addDiamond(p.x + 40 + (i * 43) % Math.max(80, p.width - 70), p.y - 34));
+      addEnemyOn(low, 1.35, 'rush');
+      addEnemyOn(p5, 1.15, 'chase');
+      addEnemyOn({ x: 1280, y: groundY, width: 360 }, 1.25, 'patrol', 0);
+    }
+
+    if (num === 5) {
+      const p1 = addPlatform(240, 830, 210, 'burger');
+      const p2 = addPlatform(520, 720, 210, 'sausage');
+      const p3 = addPlatform(790, 610, 210, 'burger');
+      const p4 = addPlatform(1060, 500, 230, 'sausage');
+      const p5 = addPlatform(1350, 615, 210, 'burger');
+      const p6 = addPlatform(1530, 785, 250, 'sausage2');
+      const mid = addPlatform(780, 850, 280, 'burger');
+      putKey(p4);
+      [p1, p2, p3, p4, p5, p6, mid].forEach((p, i) => {
+        addDiamond(p.x + 45, p.y - 34);
+        if (i % 2 === 0) addDiamond(p.x + p.width - 68, p.y - 34);
+      });
+      addEnemyOn(mid, 1.4, 'rush');
+      addEnemyOn(p5, 1.25, 'chase');
+      addEnemyOn({ x: 520, y: groundY, width: 320 }, 1.2, 'patrol', 0);
+      addEnemyOn({ x: 1180, y: groundY, width: 360 }, 1.35, 'rush', 0);
     }
 
     return level;

@@ -1,123 +1,113 @@
 class Enemy {
-  constructor(x, y, patrolLeft, patrolRight, speed, pattern) {
+  constructor(x, y, patrolLeft, patrolRight, speed = 1.3, pattern = 'patrol') {
     this.x = x;
     this.y = y;
-    this.width = 32;
+    this.width = 34;
     this.height = 40;
-    this.startX = x;
     this.patrolLeft = patrolLeft;
-    this.patrolRight = patrolRight;
-    this.speed = speed || 2;
+    this.patrolRight = Math.max(patrolLeft, patrolRight - this.width);
+    this.speed = speed;
     this.dir = 1;
-    this.time = 0;
-    this.pattern = pattern || 'patrol';
+    this.time = Math.random() * 100;
+    this.pattern = pattern;
     this.pauseTimer = 0;
-    this.patternTimer = 300 + Math.floor(Math.random() * 180);
   }
 
-  update() {
-    this.time += 0.05;
-
-    // Periodically switch pattern
-    this.patternTimer--;
-    if (this.patternTimer <= 0) {
-      const patterns = ['patrol', 'rush', 'random', 'chase'];
-      this.pattern = patterns[Math.floor(Math.random() * patterns.length)];
-      this.patternTimer = 300 + Math.floor(Math.random() * 180);
-    }
-
-    // Pause timer
+  update(game) {
+    this.time += 0.08;
     if (this.pauseTimer > 0) {
       this.pauseTimer--;
       return;
     }
 
-    const players = Game.players;
-
-    switch (this.pattern) {
-      case 'patrol':
-        this.x += this.speed * this.dir;
-        if (this.x >= this.patrolRight) { this.x = this.patrolRight; this.dir = -1; }
-        if (this.x <= this.patrolLeft) { this.x = this.patrolLeft; this.dir = 1; }
-        break;
-
-      case 'rush':
-        this.x += this.speed * 2.5 * this.dir;
-        if (this.x >= this.patrolRight || this.x <= this.patrolLeft) {
-          this.dir *= -1;
-          this.pauseTimer = 40 + Math.floor(Math.random() * 40);
+    let target = null;
+    if (this.pattern === 'chase') {
+      let best = 360;
+      game.players.forEach(player => {
+        if (player.lives <= 0) return;
+        const dx = Math.abs((player.x + player.width / 2) - (this.x + this.width / 2));
+        const dy = Math.abs((player.y + player.height / 2) - (this.y + this.height / 2));
+        if (dx < best && dy < 150) {
+          best = dx;
+          target = player;
         }
-        break;
+      });
+    }
 
-      case 'random':
-        if (Math.random() < 0.02) this.dir *= -1;
-        this.x += this.speed * this.dir;
-        if (this.x >= this.patrolRight) { this.x = this.patrolRight; this.dir = -1; }
-        if (this.x <= this.patrolLeft) { this.x = this.patrolLeft; this.dir = 1; }
-        break;
+    if (target) {
+      this.dir = target.x > this.x ? 1 : -1;
+      this.x += this.speed * 1.35 * this.dir;
+    } else {
+      const multiplier = this.pattern === 'rush' ? 1.9 : 1;
+      this.x += this.speed * multiplier * this.dir;
+    }
 
-      case 'chase':
-        let target = null;
-        let minDist = 300;
-        players.forEach(p => {
-          if (p.lives <= 0) return;
-          const d = Math.abs(p.x - this.x);
-          if (d < minDist) {
-            minDist = d;
-            target = p;
-          }
-        });
-        if (target) {
-          this.dir = target.x > this.x ? 1 : -1;
-          this.x += this.speed * this.dir;
-        } else {
-          this.x += this.speed * this.dir;
-          if (this.x >= this.patrolRight || this.x <= this.patrolLeft) this.dir *= -1;
-        }
-        break;
+    if (this.x >= this.patrolRight) {
+      this.x = this.patrolRight;
+      this.dir = -1;
+      if (this.pattern === 'rush') this.pauseTimer = 22;
+    }
+    if (this.x <= this.patrolLeft) {
+      this.x = this.patrolLeft;
+      this.dir = 1;
+      if (this.pattern === 'rush') this.pauseTimer = 22;
     }
   }
 
   draw(ctx) {
-    // Body
+    ctx.save();
+    ctx.translate(Math.round(this.x), Math.round(this.y));
+
+    ctx.fillStyle = 'rgba(0,0,0,0.22)';
+    ctx.fillRect(3, this.height - 4, this.width - 6, 7);
+
     ctx.fillStyle = '#e74c3c';
-    ctx.fillRect(this.x, this.y, this.width, this.height);
-
-    // Head / antenna base
-    ctx.fillStyle = '#c0392b';
-    ctx.fillRect(this.x + 2, this.y - 6, this.width - 4, 10);
-
-    // Eyes
-    ctx.fillStyle = '#f1c40f';
-    ctx.fillRect(this.x + 6, this.y + 4, 6, 6);
-    ctx.fillRect(this.x + this.width - 12, this.y + 4, 6, 6);
-
-    // Pupils
-    ctx.fillStyle = '#000';
-    const off = this.dir > 0 ? 3 : 0;
-    ctx.fillRect(this.x + 6 + off, this.y + 5, 3, 4);
-    ctx.fillRect(this.x + this.width - 12 + off, this.y + 5, 3, 4);
-
-    // Antenna
-    ctx.strokeStyle = '#c0392b';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(this.x + 8, this.y - 6);
-    ctx.lineTo(this.x + 4, this.y - 16);
-    ctx.moveTo(this.x + this.width - 8, this.y - 6);
-    ctx.lineTo(this.x + this.width - 4, this.y - 16);
-    ctx.stroke();
-
-    // Blinking light
-    ctx.fillStyle = Math.sin(this.time * 8) > 0 ? '#e74c3c' : '#ff7675';
-    ctx.beginPath();
-    ctx.arc(this.x + this.width / 2, this.y - 10, 3, 0, Math.PI * 2);
+    this.roundRect(ctx, 0, 5, this.width, this.height - 5, 7);
     ctx.fill();
 
-    // Pattern label
-    ctx.fillStyle = '#fff';
-    ctx.font = '8px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText(this.pattern, this.x + this.width / 2, this.y - 20);
+    ctx.fillStyle = '#c0392b';
+    this.roundRect(ctx, 4, 0, this.width - 8, 14, 5);
+    ctx.fill();
+
+    ctx.fillStyle = '#ffe66d';
+    ctx.fillRect(7, 14, 7, 7);
+    ctx.fillRect(this.width - 14, 14, 7, 7);
+
+    ctx.fillStyle = '#111';
+    const eyeOffset = this.dir > 0 ? 3 : 0;
+    ctx.fillRect(8 + eyeOffset, 15, 3, 4);
+    ctx.fillRect(this.width - 13 + eyeOffset, 15, 3, 4);
+
+    ctx.strokeStyle = '#842029';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(9, 1);
+    ctx.lineTo(5, -11);
+    ctx.moveTo(this.width - 9, 1);
+    ctx.lineTo(this.width - 5, -11);
+    ctx.stroke();
+
+    ctx.fillStyle = Math.sin(this.time * 5) > 0 ? '#ff7675' : '#ffd166';
+    ctx.beginPath();
+    ctx.arc(this.width / 2, -7, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#842029';
+    ctx.fillRect(8, this.height - 6, 6, 8);
+    ctx.fillRect(this.width - 14, this.height - 6, 6, 8);
+    ctx.restore();
+  }
+
+  roundRect(ctx, x, y, width, height, radius) {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
   }
 }

@@ -1,46 +1,49 @@
-﻿const Game = {
+const Game = {
   players: [],
   platforms: [],
   diamonds: [],
   doors: [],
   enemies: [],
+  particles: [],
   key: null,
   keyCollected: false,
   camera: { x: 0, y: 0 },
   keys: {},
   levelWidth: 0,
   levelHeight: 0,
+  levelTime: 0,
+  spawn: null,
+  shake: 0,
 
   init() {
     this.setupInput();
   },
 
   setupInput() {
-    window.addEventListener('keydown', (e) => {
-      const code = e.code;
+    window.addEventListener('keydown', (event) => {
+      const code = event.code;
       this.keys[code] = true;
 
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(code)) {
-        e.preventDefault();
+        event.preventDefault();
       }
 
       if (code === 'Enter') {
-        if (App.state === 'menu') App.startGame();
-        else if (App.state === 'win') App.startGame();
+        if (App.state === 'menu' || App.state === 'win') App.startGame();
         else if (App.state === 'fail') App.restartLevel();
       }
 
-      if (code === 'Escape' && App.state === 'playing') {
-        App.paused = !App.paused;
-      }
-
-      if (code === 'KeyR' && App.state === 'playing') {
-        App.restartLevel();
-      }
+      if (code === 'Escape' && App.state === 'playing') App.paused = !App.paused;
+      if (code === 'KeyR' && App.state === 'playing') App.restartLevel();
+      if (code === 'KeyM') App.soundEnabled = !App.soundEnabled;
     });
 
-    window.addEventListener('keyup', (e) => {
-      this.keys[e.code] = false;
+    window.addEventListener('keyup', (event) => {
+      this.keys[event.code] = false;
+    });
+
+    window.addEventListener('blur', () => {
+      this.keys = {};
     });
   },
 
@@ -49,100 +52,139 @@
     this.levelWidth = data.width;
     this.levelHeight = data.height;
     this.platforms = data.platforms || [];
-    this.doors = data.doors || [];
+    this.doors = (data.doors || []).map(door => ({ ...door, isOpen: false }));
     this.keyCollected = false;
+    this.levelTime = 0;
+    this.particles = [];
+    this.shake = 0;
 
     this.key = data.key ? new Key(data.key.x, data.key.y) : null;
+    this.enemies = (data.enemies || []).map(enemy => new Enemy(
+      enemy.x,
+      enemy.y,
+      enemy.patrolLeft,
+      enemy.patrolRight,
+      enemy.speed,
+      enemy.pattern,
+    ));
+    this.diamonds = (data.diamonds || []).map(diamond => new Diamond(diamond.x, diamond.y));
 
-    this.enemies = [];
-    if (data.enemies) {
-      data.enemies.forEach(e => {
-        this.enemies.push(new Enemy(e.x, e.y, e.patrolLeft, e.patrolRight, e.speed, e.pattern));
-      });
-    }
-
-    this.diamonds = [];
-    if (data.diamonds) {
-      data.diamonds.forEach(d => {
-        this.diamonds.push(new Diamond(d.x, d.y));
-      });
-    }
-
-    this.players = [];
+    this.spawn = data.spawn;
     const cat = new Player(data.spawn.cat.x, data.spawn.cat.y, 'cat', '#e74c3c');
     const dog = new Player(data.spawn.dog.x, data.spawn.dog.y, 'dog', '#3498db');
-    this.players.push(cat, dog);
+    this.players = [cat, dog];
     this.camera.x = 0;
     this.camera.y = 0;
   },
 
   update() {
     if (App.state !== 'playing') return;
+    this.levelTime++;
+    if (this.shake > 0) this.shake--;
 
-    this.enemies.forEach(e => e.update());
-    this.players.forEach(p => p.update(this));
+    this.enemies.forEach(enemy => enemy.update(this));
+    this.players.forEach(player => player.update(this));
+    this.updateParticles();
+    this.handleCollectibles();
+    this.handleEnemyDamage();
+    this.handleFalling();
+    this.checkWin();
+  },
 
-    // Key collection
+  getSolids() {
+    return this.platforms;
+  },
+
+  handleCollectibles() {
     if (this.key && !this.keyCollected) {
-      this.players.forEach(p => {
-        if (this.checkCollision(p, this.key)) {
+      for (const player of this.players) {
+        if (this.checkCollision(player, this.key)) {
           this.keyCollected = true;
           this.key.collected = true;
-          this.doors.forEach(d => d.isOpen = true);
+          this.doors.forEach(door => { door.isOpen = true; });
+          this.spawnParticles(this.key.x + this.key.width / 2, this.key.y + this.key.height / 2, '#f1c40f', 22);
+          App.playSound('key');
+          break;
         }
-      });
+      }
     }
 
-    // Diamond collection
-    this.players.forEach(p => {
-      this.diamonds.forEach(d => {
-        if (!d.collected && this.checkCollision(p, d)) {
-          d.collected = true;
-          p.score++;
+    this.players.forEach(player => {
+      this.diamonds.forEach(diamond => {
+        if (!diamond.collected && this.checkCollision(player, diamond)) {
+          diamond.collected = true;
+          player.score++;
+          this.spawnParticles(diamond.x + diamond.width / 2, diamond.y + diamond.height / 2, '#4dd8ff', 12);
           App.playSound('gem');
         }
       });
     });
+  },
 
-    // Win check
-    if (this.keyCollected) {
-      const catAtDoor = this.doors.some(d => d.owner === 'cat' && this.checkCollision(this.players[0], d));
-      const dogAtDoor = this.doors.some(d => d.owner === 'dog' && this.checkCollision(this.players[1], d));
-      if (catAtDoor && dogAtDoor) {
-        App.nextLevel();
-        return;
-      }
-    }
+  handleEnemyDamage() {
+    this.players.forEach(player => {
+      if (player.lives <= 0 || player.flicker > 0) return;
+      const enemy = this.enemies.find(item => this.checkCollision(player, item));
+      if (!enemy) return;
 
-    // Enemy collision вЂ” only one hit per frame per player
-    this.players.forEach(p => {
-      if (p.lives <= 0 || p.flicker > 0) return;
-      if (this.enemies.some(e => this.checkCollision(p, e))) {
-        p.lives--;
-        p.flicker = 120;
+      const dir = player.x + player.width / 2 < enemy.x + enemy.width / 2 ? -1 : 1;
+      if (player.takeDamage(dir, false)) {
+        this.shake = 14;
+        this.spawnParticles(player.x + player.width / 2, player.y + player.height / 2, '#ff7675', 18);
         App.playSound('hurt');
+        if (player.lives <= 0) App.state = 'fail';
       }
     });
+  },
 
-    // Check if both dead
-    if (this.players.some(p => p.lives <= 0)) {
-      App.state = 'fail';
-    }
-
-    // Fall off вЂ” punish only the falling player
-    this.players.forEach(p => {
-      if (p.y > this.levelHeight + 50 && p.lives > 0) {
-        p.lives--;
-        p.flicker = 120;
-        App.playSound('hurt');
+  handleFalling() {
+    this.players.forEach(player => {
+      if (player.y > this.levelHeight + 180 && player.lives > 0) {
+        if (player.takeDamage(0, true)) {
+          this.shake = 10;
+          App.playSound('hurt');
+        }
+        if (player.lives <= 0) App.state = 'fail';
       }
     });
-    if (this.players.some(p => p.lives <= 0)) {
-      App.state = 'fail';
-    }
+  },
 
-    this.camera.x = 0;
-    this.camera.y = 0;
+  checkWin() {
+    if (!this.keyCollected || !this.allDiamondsCollected()) return;
+    const catAtDoor = this.doors.some(door => door.owner === 'cat' && this.checkCollision(this.players[0], door));
+    const dogAtDoor = this.doors.some(door => door.owner === 'dog' && this.checkCollision(this.players[1], door));
+    if (catAtDoor && dogAtDoor) App.nextLevel();
+  },
+
+  allDiamondsCollected() {
+    return this.diamonds.every(diamond => diamond.collected);
+  },
+
+  updateParticles() {
+    this.particles = this.particles.filter(particle => {
+      particle.x += particle.vx;
+      particle.y += particle.vy;
+      particle.vy += 0.18;
+      particle.life--;
+      return particle.life > 0;
+    });
+  },
+
+  spawnParticles(x, y, color, count = 12) {
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 1 + Math.random() * 4;
+      this.particles.push({
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 1.5,
+        size: 3 + Math.random() * 4,
+        color,
+        life: 24 + Math.floor(Math.random() * 20),
+        maxLife: 44,
+      });
+    }
   },
 
   render() {
@@ -150,160 +192,179 @@
     const cw = App.canvas.width;
     const ch = App.canvas.height;
 
-    ctx.fillStyle = '#1a1a2e';
+    ctx.fillStyle = '#111827';
     ctx.fillRect(0, 0, cw, ch);
 
     const scale = Math.min(cw / this.levelWidth, ch / this.levelHeight);
     const ox = (cw - this.levelWidth * scale) / 2;
     const oy = (ch - this.levelHeight * scale) / 2;
+    const sx = this.shake > 0 ? (Math.random() - 0.5) * this.shake : 0;
+    const sy = this.shake > 0 ? (Math.random() - 0.5) * this.shake : 0;
 
     ctx.save();
-    ctx.translate(ox, oy);
+    ctx.translate(ox + sx, oy + sy);
     ctx.scale(scale, scale);
 
     this.drawBackground(ctx);
     ctx.imageSmoothingEnabled = false;
-    this.platforms.forEach(p => this.drawPlatform(ctx, p));
-    this.doors.forEach(d => this.drawDoor(ctx, d));
-    this.diamonds.forEach(d => d.draw(ctx));
+    this.platforms.forEach(platform => this.drawPlatform(ctx, platform));
+    this.doors.forEach(door => this.drawDoor(ctx, door));
+    this.diamonds.forEach(diamond => diamond.draw(ctx));
     if (this.key && !this.keyCollected) this.key.draw(ctx);
-    this.enemies.forEach(e => e.draw(ctx));
-    this.players.forEach(p => p.draw(ctx));
+    this.enemies.forEach(enemy => enemy.draw(ctx));
+    this.players.forEach(player => player.draw(ctx));
+    this.drawParticles(ctx);
 
     ctx.restore();
-
     UI.drawHUD(ctx);
   },
 
   drawBackground(ctx) {
-    ctx.fillStyle = '#ff8fab';
+    const sky = ctx.createLinearGradient(0, 0, 0, this.levelHeight);
+    sky.addColorStop(0, '#ffb3c7');
+    sky.addColorStop(0.55, '#ffd6a5');
+    sky.addColorStop(1, '#bde0fe');
+    ctx.fillStyle = sky;
     ctx.fillRect(0, 0, this.levelWidth, this.levelHeight);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    for (let i = 0; i < 8; i++) {
+      const x = (i * 260 + (this.levelTime * 0.18)) % (this.levelWidth + 220) - 140;
+      const y = 90 + (i % 3) * 55;
+      this.drawCloud(ctx, x, y, 1 + (i % 2) * 0.35);
+    }
+
+    ctx.fillStyle = 'rgba(100, 55, 130, 0.22)';
+    this.drawHills(ctx, 760, 240);
+    ctx.fillStyle = 'rgba(86, 132, 96, 0.26)';
+    this.drawHills(ctx, 835, 180);
   },
 
-  drawPlatform(ctx, p) {
+  drawCloud(ctx, x, y, s) {
+    ctx.beginPath();
+    ctx.arc(x, y, 30 * s, 0, Math.PI * 2);
+    ctx.arc(x + 34 * s, y - 12 * s, 38 * s, 0, Math.PI * 2);
+    ctx.arc(x + 74 * s, y, 28 * s, 0, Math.PI * 2);
+    ctx.rect(x - 8 * s, y, 95 * s, 24 * s);
+    ctx.fill();
+  },
+
+  drawHills(ctx, baseY, height) {
+    ctx.beginPath();
+    ctx.moveTo(0, this.levelHeight);
+    for (let x = -100; x <= this.levelWidth + 100; x += 160) {
+      ctx.quadraticCurveTo(x + 80, baseY - height, x + 160, baseY);
+    }
+    ctx.lineTo(this.levelWidth, this.levelHeight);
+    ctx.closePath();
+    ctx.fill();
+  },
+
+  drawPlatform(ctx, platform) {
     const tileSize = 36;
 
-    if (p.style === 'floor') {
-      const set = p.floorSet || 'choco';
-      this.drawFloorColumn(ctx, p, set, tileSize);
+    if (platform.style === 'floor') {
+      this.drawFloor(ctx, platform, tileSize);
       return;
     }
 
-    if (p.style === 'sausage2') {
-      this.drawSectionedPlatform(ctx, p, tileSize);
+    if (platform.style === 'sausage2') {
+      this.drawSectionedPlatform(ctx, platform, tileSize);
       return;
     }
 
-    const leftKey = p.style + '_left';
-    const midKey = p.style + '_mid';
-    const rightKey = p.style + '_right';
-    const left = App.assets[leftKey];
-    const mid = App.assets[midKey];
-    const right = App.assets[rightKey];
+    const left = App.assets[`${platform.style}_left`];
+    const mid = App.assets[`${platform.style}_mid`];
+    const right = App.assets[`${platform.style}_right`];
 
-    if (left && left.complete && left.naturalWidth > 0 &&
-        mid && mid.complete && mid.naturalWidth > 0 &&
-        right && right.complete && right.naturalWidth > 0) {
-      const lw = tileSize;
-      const mw = tileSize;
-      const rw = tileSize;
-
-      ctx.drawImage(left, p.x, p.y, lw, tileSize);
-      for (let x = p.x + lw; x < p.x + p.width - rw; x += mw) {
-        const tw = Math.min(mw, p.x + p.width - rw - x);
-        ctx.drawImage(mid, x, p.y, tw, tileSize);
+    if (left && mid && right) {
+      ctx.drawImage(left, platform.x, platform.y, tileSize, platform.height);
+      for (let x = platform.x + tileSize; x < platform.x + platform.width - tileSize; x += tileSize) {
+        const tw = Math.min(tileSize, platform.x + platform.width - tileSize - x);
+        ctx.drawImage(mid, x, platform.y, tw, platform.height);
       }
-      ctx.drawImage(right, p.x + p.width - rw, p.y, rw, tileSize);
+      ctx.drawImage(right, platform.x + platform.width - tileSize, platform.y, tileSize, platform.height);
     } else {
-      ctx.fillStyle = '#555';
-      ctx.fillRect(p.x, p.y, p.width, p.height);
+      ctx.fillStyle = '#6b4f3a';
+      ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
     }
+
+    ctx.fillStyle = 'rgba(0,0,0,0.16)';
+    ctx.fillRect(platform.x, platform.y + platform.height - 6, platform.width, 6);
   },
 
-  drawFloorColumn(ctx, p, set, tileSize) {
-    const top = { left: 'pinkfloor2of4',  mid: 'pinkfloor3of4',  right: 'pinkfloor4of4'  };
-    const mid = { left: 'floor_choco_02', mid: 'floor_choco_03', right: 'floor_choco_04' };
-    const bot = { left: 'floor_clean_02', mid: 'floor_clean_03', right: 'floor_clean_04' };
+  drawFloor(ctx, platform, tileSize) {
+    const sets = {
+      choco: ['floor_choco_01', 'floor_choco_02', 'floor_choco_03', 'floor_choco_04'],
+      clean: ['floor_clean_01', 'floor_clean_02', 'floor_clean_03', 'floor_clean_04'],
+      pink: ['pinkfloor1of4', 'pinkfloor2of4', 'pinkfloor3of4', 'pinkfloor4of4'],
+    };
+    const tiles = sets[platform.floorSet] || sets.choco;
 
-    const totalRows = Math.floor(p.height / tileSize);
-    let ty = p.y;
-    let row = 0;
-
-    while (ty < p.y + p.height) {
-      const layer = row === 0 ? top : (row === totalRows - 1 ? bot : mid);
-      const left = App.assets[layer.left];
-      const tile = App.assets[layer.mid];
-      const right = App.assets[layer.right];
-
-      if (row === 0) {
-        for (let tx = p.x; tx < p.x + p.width; tx += tileSize) {
-          const tw = Math.min(tileSize, p.x + p.width - tx);
-          let t;
-          if (tx === p.x) t = left;
-          else if (tx + tileSize >= p.x + p.width) t = right;
-          else t = tile;
-          if (t && t.complete && t.naturalWidth > 0) {
-            ctx.drawImage(t, tx, ty, tw, tileSize);
-          } else {
-            ctx.fillStyle = '#444';
-            ctx.fillRect(tx, ty, tw, tileSize);
-          }
-        }
-      } else {
-        if (tile && tile.complete && tile.naturalWidth > 0) {
-          for (let tx = p.x; tx < p.x + p.width; tx += tileSize) {
-            const tw = Math.min(tileSize, p.x + p.width - tx);
-            ctx.drawImage(tile, tx, ty, tw, tileSize);
-          }
-        } else {
-          ctx.fillStyle = '#444';
-          ctx.fillRect(p.x, ty, p.width, tileSize);
+    for (let y = platform.y; y < platform.y + platform.height; y += tileSize) {
+      for (let x = platform.x; x < platform.x + platform.width; x += tileSize) {
+        const tw = Math.min(tileSize, platform.x + platform.width - x);
+        const th = Math.min(tileSize, platform.y + platform.height - y);
+        let index = 2;
+        if (y === platform.y) index = x === platform.x ? 0 : 1;
+        else if (y + tileSize >= platform.y + platform.height) index = 3;
+        const img = App.assets[tiles[index]];
+        if (img && img.complete && img.naturalWidth > 0) ctx.drawImage(img, x, y, tw, th);
+        else {
+          ctx.fillStyle = '#6b4f3a';
+          ctx.fillRect(x, y, tw, th);
         }
       }
-      ty += tileSize;
-      row++;
     }
   },
 
-  drawSectionedPlatform(ctx, p, tileSize) {
-    const left = App.assets['sausage2_left'];
-    const right = App.assets['sausage2_right'];
-    if (left && left.complete && left.naturalWidth > 0 &&
-        right && right.complete && right.naturalWidth > 0) {
-      ctx.drawImage(left, p.x, p.y, tileSize, tileSize);
-      ctx.drawImage(right, p.x + p.width - tileSize, p.y, tileSize, tileSize);
-      // fill middle
-      for (let x = p.x + tileSize; x < p.x + p.width - tileSize; x += tileSize) {
-        ctx.drawImage(left, x, p.y, Math.min(tileSize, p.x + p.width - tileSize - x), tileSize);
+  drawSectionedPlatform(ctx, platform, tileSize) {
+    const left = App.assets.sausage2_left;
+    const right = App.assets.sausage2_right;
+    if (left && right) {
+      ctx.drawImage(left, platform.x, platform.y, tileSize, platform.height);
+      for (let x = platform.x + tileSize; x < platform.x + platform.width - tileSize; x += tileSize) {
+        ctx.drawImage(left, x, platform.y, Math.min(tileSize, platform.x + platform.width - tileSize - x), platform.height);
       }
+      ctx.drawImage(right, platform.x + platform.width - tileSize, platform.y, tileSize, platform.height);
     } else {
-      ctx.fillStyle = '#555';
-      ctx.fillRect(p.x, p.y, p.width, p.height);
+      ctx.fillStyle = '#6b4f3a';
+      ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
     }
   },
 
-  drawDoor(ctx, d) {
-    const key = d.isOpen ? 'door_open' : 'door_closed';
-    const img = App.assets[key];
+  drawDoor(ctx, door) {
+    const img = App.assets[door.isOpen ? 'door_open' : 'door_closed'];
     if (img && img.complete && img.naturalWidth > 0) {
-      const s = Math.min(d.width / img.width, d.height / img.height);
-      const dw = img.width * s;
-      const dh = img.height * s;
-      ctx.drawImage(img, d.x + (d.width - dw) / 2, d.y + d.height - dh, dw, dh);
+      const scale = Math.min(door.width / img.width, door.height / img.height);
+      const dw = img.width * scale;
+      const dh = img.height * scale;
+      ctx.drawImage(img, door.x + (door.width - dw) / 2, door.y + door.height - dh, dw, dh);
     } else {
-      ctx.fillStyle = d.isOpen ? '#2ecc71' : '#7f8c8d';
-      ctx.fillRect(d.x, d.y, d.width, d.height);
+      ctx.fillStyle = door.isOpen ? '#2ecc71' : '#7f8c8d';
+      ctx.fillRect(door.x, door.y, door.width, door.height);
     }
 
-    ctx.fillStyle = '#fff';
+    const ready = this.keyCollected && this.allDiamondsCollected();
+    ctx.fillStyle = door.owner === 'cat' ? '#ff6b6b' : '#74b9ff';
+    ctx.beginPath();
+    ctx.arc(door.x + door.width / 2, door.y - 18, 8, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = ready ? '#2ecc71' : '#f1c40f';
     ctx.font = 'bold 12px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(d.owner, d.x + d.width / 2, d.y - 6);
+    ctx.fillText(ready ? 'GO' : 'LOCK', door.x + door.width / 2, door.y - 32);
+  },
 
-    ctx.fillStyle = d.owner === 'cat' ? '#e74c3c' : '#3498db';
-    ctx.beginPath();
-    ctx.arc(d.x + d.width / 2, d.y - 16, 6, 0, Math.PI * 2);
-    ctx.fill();
+  drawParticles(ctx) {
+    this.particles.forEach(particle => {
+      const alpha = Math.max(0, Math.min(1, particle.life / particle.maxLife));
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = particle.color;
+      ctx.fillRect(particle.x, particle.y, particle.size, particle.size);
+    });
+    ctx.globalAlpha = 1;
   },
 
   checkCollision(a, b) {
@@ -313,6 +374,3 @@
            a.y + a.height > b.y;
   }
 };
-
-
-

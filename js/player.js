@@ -1,179 +1,218 @@
-﻿class Player {
+class Player {
   constructor(x, y, type, color) {
+    this.spawnX = x;
+    this.spawnY = y;
     this.x = x;
     this.y = y;
-    this.width = 72;
-    this.height = 96;
+    this.width = 58;
+    this.height = 76;
     this.vx = 0;
     this.vy = 0;
-    this.accel = 0.4;
-    this.friction = 0.88;
-    this.maxSpeed = 5;
-    this.jumpPower = -10;
-    this.gravity = 0.35;
+    this.accel = 0.64;
+    this.friction = 0.82;
+    this.maxSpeed = 7.1;
+    this.jumpPower = -13.4;
+    this.gravity = 0.56;
+    this.maxFallSpeed = 18;
+    this.stepHeight = 24;
     this.onGround = false;
-    this.jumpHeld = false;
     this.coyoteTime = 0;
-    this.coyoteTimeMax = 8;
-    this.jumpCut = false;
+    this.coyoteTimeMax = 10;
+    this.jumpBuffer = 0;
+    this.jumpBufferMax = 9;
+    this.jumpWasDown = false;
+    this.facing = 1;
     this.type = type;
     this.color = color;
     this.score = 0;
     this.lives = 3;
     this.flicker = 0;
+    this.animTime = Math.random() * 10;
   }
 
   update(game) {
     if (this.flicker > 0) this.flicker--;
 
-    const keys = game.keys;
+    if (this.onGround) this.coyoteTime = this.coyoteTimeMax;
+    else if (this.coyoteTime > 0) this.coyoteTime--;
 
-      let leftKey, rightKey, jumpKey;
-      if (this.type === 'cat') {
-        leftKey = 'KeyA';
-        rightKey = 'KeyD';
-        jumpKey = 'KeyW';
-      } else {
-        leftKey = 'ArrowLeft';
-        rightKey = 'ArrowRight';
-        jumpKey = 'ArrowUp';
-      }
+    const controls = this.type === 'cat'
+      ? { left: 'KeyA', right: 'KeyD', jump: 'KeyW' }
+      : { left: 'ArrowLeft', right: 'ArrowRight', jump: 'ArrowUp' };
 
-      if (keys[leftKey]) this.vx -= this.accel;
-      else if (keys[rightKey]) this.vx += this.accel;
-      else this.vx *= this.friction;
+    const left = !!game.keys[controls.left];
+    const right = !!game.keys[controls.right];
+    const jumpDown = !!game.keys[controls.jump];
 
-      if (keys[jumpKey]) {
-        if (this.onGround || this.coyoteTime > 0) {
-          this.vy = this.jumpPower;
-          this.onGround = false;
-          this.jumpHeld = true;
-          this.coyoteTime = 0;
-          App.playSound('jump');
-          this.jumpCut = false;
-        } else if (this.jumpHeld && this.vy < 0) {
-          this.vy += this.gravity * 0.7;
-        }
-      } else {
-        this.jumpHeld = false;
-        if (this.vy < 0) {
-          this.vy += this.gravity * 0.3;
-          this.jumpCut = true;
-        }
-      }
-
-    if (Math.abs(this.vx) > this.maxSpeed) {
-      this.vx = Math.sign(this.vx) * this.maxSpeed;
+    if (left && !right) {
+      this.vx -= this.accel;
+      this.facing = -1;
+    } else if (right && !left) {
+      this.vx += this.accel;
+      this.facing = 1;
+    } else {
+      this.vx *= this.friction;
     }
-    if (Math.abs(this.vx) < 0.1) this.vx = 0;
 
-    if (!this.jumpHeld || this.vy >= 0) {
-      this.vy += this.gravity;
+    if (Math.abs(this.vx) > this.maxSpeed) this.vx = Math.sign(this.vx) * this.maxSpeed;
+    if (Math.abs(this.vx) < 0.08) this.vx = 0;
+
+    if (jumpDown && !this.jumpWasDown) this.jumpBuffer = this.jumpBufferMax;
+    else if (this.jumpBuffer > 0) this.jumpBuffer--;
+    this.jumpWasDown = jumpDown;
+
+    if (this.jumpBuffer > 0 && (this.onGround || this.coyoteTime > 0)) {
+      this.vy = this.jumpPower;
+      this.onGround = false;
+      this.coyoteTime = 0;
+      this.jumpBuffer = 0;
+      App.playSound('jump');
     }
-    if (this.vy > 18) this.vy = 18;
 
+    if (!jumpDown && this.vy < -3.5) this.vy += this.gravity * 0.85;
+    this.vy += this.gravity;
+    if (this.vy > this.maxFallSpeed) this.vy = this.maxFallSpeed;
+
+    this.moveHorizontal(game);
+    this.moveVertical(game);
+
+    if (this.x < 0) { this.x = 0; this.vx = 0; }
+    if (this.x + this.width > game.levelWidth) {
+      this.x = game.levelWidth - this.width;
+      this.vx = 0;
+    }
+
+    this.updateAnimation();
+  }
+
+  moveHorizontal(game) {
     this.x += this.vx;
-    game.platforms.forEach(p => {
-      if (p.style !== 'floor') return;
-      const overlapY = Math.min(this.y + this.height, p.y + p.height) - Math.max(this.y, p.y);
-      if (overlapY <= 0) return;
-      if (game.checkCollision(this, p)) {
-        const feetY = this.y + this.height;
-        if (feetY >= p.y && feetY - p.y <= 12) {
-          this.y = p.y - this.height;
-          this.vy = 0.5;
-        } else {
-          if (this.vx > 0) this.x = p.x - this.width;
-          else if (this.vx < 0) this.x = p.x + p.width;
-          this.vx = 0;
-        }
-      }
-    });
+    if (this.vx === 0) return;
 
-    if (this.onGround) {
-      this.coyoteTime = this.coyoteTimeMax;
-    } else if (this.coyoteTime > 0) {
-      this.coyoteTime--;
+    for (const p of game.getSolids()) {
+      if (!game.checkCollision(this, p)) continue;
+      if (this.tryStepUp(game, p)) continue;
+
+      if (this.vx > 0) this.x = p.x - this.width;
+      else if (this.vx < 0) this.x = p.x + p.width;
+      this.vx = 0;
+    }
+  }
+
+  tryStepUp(game, platform) {
+    if (this.vy < -1) return false;
+    const feet = this.y + this.height;
+    const requiredStep = feet - platform.y;
+    if (requiredStep <= 0 || requiredStep > this.stepHeight) return false;
+
+    const oldY = this.y;
+    this.y = platform.y - this.height;
+    const blocked = game.getSolids().some(other => other !== platform && game.checkCollision(this, other));
+    if (blocked) {
+      this.y = oldY;
+      return false;
     }
 
+    this.vy = Math.min(this.vy, 0);
+    this.onGround = true;
+    this.coyoteTime = this.coyoteTimeMax;
+    return true;
+  }
+
+  moveVertical(game) {
     const oldY = this.y;
     this.y += this.vy;
     this.onGround = false;
-    game.platforms.forEach(p => {
-      if (game.checkCollision(this, p)) {
-        if (this.vy > 0 && oldY + this.height <= p.y) {
-          this.y = p.y - this.height;
-          this.vy = 0;
-          this.onGround = true;
-          this.coyoteTime = this.coyoteTimeMax;
-        } else if (this.vy < 0 && oldY >= p.y + p.height) {
-          this.y = p.y + p.height;
-          this.vy = 0;
-        }
+
+    for (const p of game.getSolids()) {
+      if (!game.checkCollision(this, p)) continue;
+
+      if (this.vy > 0 && oldY + this.height <= p.y + 2) {
+        this.y = p.y - this.height;
+        this.vy = 0;
+        this.onGround = true;
+        this.coyoteTime = this.coyoteTimeMax;
+      } else if (this.vy < 0 && oldY >= p.y + p.height - 2) {
+        this.y = p.y + p.height;
+        this.vy = 0;
       }
-    });
+    }
 
     if (this.y < 0) {
       this.y = 0;
       this.vy = 0;
     }
+  }
 
-    if (this.x < 0) this.x = 0;
-    if (this.x + this.width > game.levelWidth) this.x = game.levelWidth - this.width;
-    if (this.y + this.height > game.levelHeight) {
-      this.y = game.levelHeight - this.height;
-      this.vy = 0;
-      this.onGround = true;
-    }
+  takeDamage(knockbackDir = 0, respawn = false) {
+    if (this.flicker > 0 || this.lives <= 0) return false;
+    this.lives--;
+    this.flicker = 105;
+    this.vx = knockbackDir * 6.5;
+    this.vy = -7;
+    if (respawn && this.lives > 0) this.respawn();
+    return true;
+  }
+
+  respawn() {
+    this.x = this.spawnX;
+    this.y = this.spawnY;
+    this.vx = 0;
+    this.vy = 0;
+    this.onGround = false;
+    this.coyoteTime = 0;
+    this.jumpBuffer = 0;
+  }
+
+  updateAnimation() {
+    let speed = 0.14;
+    if (!this.onGround) speed = 0.16;
+    else if (Math.abs(this.vx) > 0.5) speed = 0.28;
+    this.animTime += speed;
   }
 
   draw(ctx) {
-    const assetKey = this.getSpriteKey();
-    let img = App.assets[assetKey];
-    if (!img || !img.complete || img.naturalWidth <= 0) img = null;
+    if (this.flicker > 0 && Math.floor(this.flicker / 5) % 2 === 0) return;
 
-    if (this.flicker > 0 && Math.floor(this.flicker / 4) % 2 === 0) return;
+    const state = this.getAnimationState();
+    const img = App.getAnimationFrame(`${this.type}_${state}`, this.animTime);
 
     ctx.save();
-
     if (img) {
-      const s = Math.min(this.width / img.width, this.height / img.height);
-      const dw = img.width * s;
-      const dh = img.height * s;
+      const drawW = this.width * 1.72;
+      const drawH = this.height * 1.48;
+      const dx = Math.round(this.x + this.width / 2 - drawW / 2);
+      const dy = Math.round(this.y + this.height - drawH + 8);
 
-      if (this.vx < 0) {
-        ctx.translate(Math.round(this.x + this.width), 0);
+      if (this.facing < 0) {
+        ctx.translate(Math.round(this.x + this.width / 2), 0);
         ctx.scale(-1, 1);
-        ctx.drawImage(img, 0, this.y + this.height - dh, dw, dh);
+        ctx.drawImage(img, -drawW / 2, dy, drawW, drawH);
       } else {
-        ctx.drawImage(img, Math.round(this.x) + (this.width - dw) / 2, this.y + this.height - dh, dw, dh);
+        ctx.drawImage(img, dx, dy, drawW, drawH);
       }
     } else {
       ctx.fillStyle = this.color;
       ctx.fillRect(Math.round(this.x), Math.round(this.y), this.width, this.height);
       ctx.fillStyle = '#fff';
-      ctx.fillRect(Math.round(this.x + 14), Math.round(this.y + 18), 12, 12);
-      ctx.fillRect(Math.round(this.x + this.width - 26), Math.round(this.y + 18), 12, 12);
+      ctx.fillRect(Math.round(this.x + 12), Math.round(this.y + 16), 10, 10);
+      ctx.fillRect(Math.round(this.x + this.width - 22), Math.round(this.y + 16), 10, 10);
     }
-
     ctx.restore();
 
-    ctx.fillStyle = '#fff';
-    ctx.font = '14px monospace';
+    ctx.save();
     ctx.textAlign = 'center';
-    ctx.fillText(this.type, Math.round(this.x + this.width / 2), Math.round(this.y - 8));
-
-    for (let i = 0; i < 3; i++) {
-      ctx.fillStyle = i < this.lives ? '#e74c3c' : '#333';
-      ctx.font = '12px monospace';
-      ctx.fillText('\u2665', Math.round(this.x + 8 + i * 16), Math.round(this.y - 22));
-    }
+    ctx.font = 'bold 13px monospace';
+    ctx.fillStyle = this.type === 'cat' ? '#ff6b6b' : '#74b9ff';
+    ctx.fillText(this.type === 'cat' ? 'CAT' : 'DOG', Math.round(this.x + this.width / 2), Math.round(this.y - 8));
+    ctx.restore();
   }
 
-  getSpriteKey() {
-    const prefix = this.type === 'cat' ? 'cat' : 'dog';
-    if (!this.onGround) return prefix + '_jump';
-    if (Math.abs(this.vx) > 0.5) return prefix + '_run';
-    return prefix + '_idle';
+  getAnimationState() {
+    if (this.flicker > 0) return 'hurt';
+    if (!this.onGround && this.vy > 1) return 'fall';
+    if (!this.onGround) return 'jump';
+    if (Math.abs(this.vx) > 0.5) return 'run';
+    return 'idle';
   }
 }

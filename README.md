@@ -1,37 +1,47 @@
 # Cats & Dogs 🐱🐶
 
-A 2D platformer built with HTML Canvas API — inspired by Fireboy and Watergirl.
+Кооперативный 2D-платформер на HTML Canvas в стиле Fireboy and Watergirl: кот и собака проходят уровни вместе, собирают алмазы, находят ключ и доходят до своих дверей.
 
-Control both characters simultaneously to collect diamonds, avoid enemies, and reach the door.
+## Что улучшено
 
-## Controls
+- Уровни больше не генерируются случайно: теперь есть 5 заранее сбалансированных уровней.
+- Исправлена физика прыжков и коллизий: персонажи легче запрыгивают на платформы и не цепляются за маленькие перепады высоты.
+- Добавлены jump buffer и coyote time: прыжки ощущаются честнее и отзывчивее.
+- Добавлены анимации кота и собаки из уже подключенных спрайтов.
+- Улучшены враги: патруль, рывок и преследование без хаотичного поведения.
+- Условие победы стало понятным: собрать все алмазы, взять ключ, затем привести кота и собаку к своим дверям.
+- Улучшены меню, HUD, фон, частицы, эффекты урона и экран паузы.
+- Исправлен текст поражения и поведение при падении.
 
-| Character | Move | Jump |
-|-----------|------|------|
-| **Cat** (red)  | A / D | W |
-| **Dog** (blue) | ← / → | ↑ |
+## Управление
 
-Collect **all diamonds** on the level, then both characters must reach the **green door** to advance.
+| Герой | Движение | Прыжок |
+|---|---|---|
+| Cat | A / D | W |
+| Dog | ← / → | ↑ |
 
-## Levels
+Дополнительно:
 
-- **Level 1** — Easy introduction with basic platforms
-- **Level 2** — More platforms and higher jumps
-- **Level 3** — Robot enemy patrols — avoid it or restart!
+- **Enter** — старт / повтор
+- **R** — перезапуск уровня
+- **Esc** — пауза
+- **M** — звук вкл/выкл
 
-## Tech Stack
+## Запуск
 
-- HTML / CSS / JavaScript
-- Canvas API
-- Sprites from [Kenney Platformer Pack](https://kenney.nl/assets/platformer-pack)
-- Cat & Dog sprites from [CatnDog](https://elthen.itch.io/2d-pixel-art-cat-and-dog-sprites)
-
-## Run Locally
+Открой `index.html` в браузере или запусти локальный сервер:
 
 ```bash
-git clone https://github.com/amirim1/CatsDogs.git
-cd CatsDogs
-# Open index.html in any browser
+python -m http.server 8000
 ```
 
-Or play online: https://amirim1.github.io/CatsDogs/
+Затем открой `http://localhost:8000`.
+
+## Технологии
+
+- HTML
+- CSS
+- JavaScript
+- Canvas API
+- Kenney Platformer Pack
+- Cat & Dog sprites

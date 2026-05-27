@@ -4,16 +4,20 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #1a1a2e;
+  background: #0f172a;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
 }
 
 canvas {
   display: block;
-  margin: 0 auto;
-  background: #16213e;
+  width: 100vw;
+  height: 100vh;
+  background: #0f172a;
   image-rendering: pixelated;
+  user-select: none;
 }
