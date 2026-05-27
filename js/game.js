@@ -141,16 +141,13 @@
       App.state = 'fail';
     }
 
-    const midX = (this.players[0].x + this.players[1].x) / 2;
-    const midY = (this.players[0].y + this.players[1].y) / 2;
-    this.camera.x = Math.max(0, Math.min(this.levelWidth - App.canvas.width, midX - App.canvas.width / 2));
-    this.camera.y = Math.max(0, Math.min(this.levelHeight - App.canvas.height, midY - App.canvas.height / 2));
+    this.camera.x = 0;
+    this.camera.y = 0;
   },
 
   render() {
     const ctx = App.ctx;
     ctx.save();
-    ctx.translate(-Math.round(this.camera.x), -Math.round(this.camera.y));
 
     this.drawBackground(ctx);
     this.platforms.forEach(p => this.drawPlatform(ctx, p));

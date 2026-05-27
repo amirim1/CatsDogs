@@ -18,8 +18,11 @@
   },
 
   resize() {
-    this.canvas.width = window.innerWidth;
-    this.canvas.height = window.innerHeight;
+    this.canvas.width = 1280;
+    this.canvas.height = 720;
+    const scale = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+    this.canvas.style.width = Math.floor(1280 * scale) + 'px';
+    this.canvas.style.height = Math.floor(720 * scale) + 'px';
   },
 
   loadAssets() {

@@ -13,15 +13,12 @@
 
   _build(num) {
     const isHard = num >= 3;
-    const platformCount = num === 1 ? 4 + Math.floor(Math.random() * 2)
-                      : num === 2 ? 5 + Math.floor(Math.random() * 3)
-                      : 8 + Math.floor(Math.random() * 3);
 
     const floorSets = ['choco', 'clean', 'pink'];
     const floorSet = floorSets[num % 3];
 
     const level = {
-      width: 800 + platformCount * 200,
+      width: 1280,
       height: 720,
       floorSet: floorSet,
       spawn: { cat: { x: 80, y: 540 }, dog: { x: 180, y: 540 } },
@@ -36,37 +33,40 @@
     const groundH = 500;
     level.platforms.push({ x: 0, y: groundY, width: level.width, height: groundH, style: 'floor', floorSet: floorSet });
 
+    const platformLayouts = {
+      1: [
+        { x: 200, y: 560 },
+        { x: 380, y: 510 },
+        { x: 560, y: 560 },
+        { x: 740, y: 510 },
+      ],
+      2: [
+        { x: 180, y: 530 },
+        { x: 380, y: 470 },
+        { x: 580, y: 530 },
+        { x: 780, y: 470 },
+        { x: 980, y: 530 },
+      ],
+      3: [
+        { x: 160, y: 550 },
+        { x: 330, y: 480 },
+        { x: 500, y: 410 },
+        { x: 670, y: 480 },
+        { x: 840, y: 410 },
+        { x: 1010, y: 550 },
+      ],
+    };
+    const positions = platformLayouts[num] || platformLayouts[1];
+    const platformCount = positions.length;
+
     const styles = ['burger', 'sausage'];
-    let px = 250;
-    let py = 590;
-    const maxStepUp = -80;
-    const maxStepDown = 70;
-
-    for (let i = 0; i < platformCount; i++) {
+    positions.forEach((pos, i) => {
       const style = styles[i % styles.length];
-      const w = 180 + Math.floor(Math.random() * 60);
-      const gapX = 180 + Math.floor(Math.random() * 80);
-
-      let dy;
-      if (py <= 200) {
-        dy = 20 + Math.floor(Math.random() * 40);
-      } else if (py >= groundY - 150) {
-        dy = -(40 + Math.floor(Math.random() * 50));
-      } else {
-        dy = maxStepUp + Math.floor(Math.random() * (maxStepDown - maxStepUp + 1));
-      }
-      dy = Math.max(maxStepUp, Math.min(maxStepDown, dy));
-      const newY = Math.max(150, Math.min(groundY - 100, py + dy));
-
-      px += gapX;
-      py = newY;
-
-      level.platforms.push({ x: px, y: py, width: w, height: 36, style: style });
-
+      level.platforms.push({ x: pos.x, y: pos.y, width: 130, height: 36, style: style });
       if (Math.random() < 0.5) {
-        level.diamonds.push({ x: px + 20 + Math.floor(Math.random() * (w - 40)), y: py - 30 });
+        level.diamonds.push({ x: pos.x + 20 + Math.floor(Math.random() * 90), y: pos.y - 30 });
       }
-    }
+    });
 
     for (let i = 0; i < 2 + num; i++) {
       level.diamonds.push({
@@ -75,11 +75,14 @@
       });
     }
 
-    const lastPlat = level.platforms[level.platforms.length - 1];
     const doorY = groundY - 96;
+    const margin = 80;
+    const sectionW = (level.width - margin * 2) / 3;
+    const catX = margin + Math.floor(Math.random() * (sectionW - 48));
+    const dogX = margin + sectionW * 2 + Math.floor(Math.random() * (sectionW - 48));
     level.doors.push(
-      { x: Math.max(lastPlat.x + lastPlat.width + 60, level.width - 360), y: doorY, width: 48, height: 96, isOpen: false, owner: 'cat' },
-      { x: Math.max(lastPlat.x + lastPlat.width + 140, level.width - 260), y: doorY, width: 48, height: 96, isOpen: false, owner: 'dog' },
+      { x: catX, y: doorY, width: 48, height: 96, isOpen: false, owner: 'cat' },
+      { x: dogX, y: doorY, width: 48, height: 96, isOpen: false, owner: 'dog' },
     );
 
     const midIdx = Math.floor(platformCount / 2);
@@ -100,7 +103,7 @@
           y: plat.y - 40,
           patrolLeft: Math.max(plat.x, cx - halfW),
           patrolRight: Math.min(plat.x + plat.width, cx + halfW),
-          speed: 0.8 + Math.random() * 0.7,
+          speed: 0.3 + Math.random() * 0.3,
           pattern: patterns[e % patterns.length],
         });
       }
