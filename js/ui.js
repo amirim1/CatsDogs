@@ -24,7 +24,7 @@ const UI = {
     ctx.fillStyle = collected === total ? '#2ecc71' : '#4dd8ff';
     ctx.fillText(`Diamonds: ${collected}/${total}`, 250, 26);
 
-    const status = Game.keyCollected && collected === total ? 'Doors are ready' : 'Collect all diamonds and the key';
+    const status = Game.keyCollected ? 'Doors are ready' : 'Find the key to open the doors';
     ctx.fillStyle = '#d1d5db';
     ctx.fillText(status, 430, 26);
 
@@ -92,7 +92,7 @@ const UI = {
     ctx.fillStyle = '#74b9ff';
     ctx.fillText('Dog: ← / → — движение, ↑ — прыжок', w / 2, h / 2 + 27);
     ctx.fillStyle = '#d1d5db';
-    ctx.fillText('Соберите все алмазы, найдите ключ и дойдите до своих дверей.', w / 2, h / 2 + 67);
+    ctx.fillText('Найдите ключ и дойдите до своих дверей. Алмазы — бонус.', w / 2, h / 2 + 67);
 
     ctx.fillStyle = '#2ecc71';
     ctx.font = 'bold 24px monospace';

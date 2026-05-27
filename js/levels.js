@@ -20,7 +20,7 @@ const Levels = {
     const height = 1080;
     const groundY = 952;
     const playerH = 76;
-    const floorSets = ['choco', 'clean', 'pink', 'choco', 'pink'];
+    const floorSets = ['mixed', 'mixed', 'mixed', 'mixed', 'mixed'];
     const level = {
       width,
       height,
@@ -77,7 +77,7 @@ const Levels = {
       const p2 = addPlatform(600, 710, 230, 'burger');
       const p3 = addPlatform(930, 600, 230, 'sausage');
       const p4 = addPlatform(1260, 710, 230, 'burger');
-      const p5 = addPlatform(1480, 840, 210, 'sausage2');
+      const p5 = addPlatform(1480, 840, 210, 'sausage');
       putKey(p3);
       [p1, p2, p3, p4, p5].forEach((p, i) => addDiamond(p.x + 45 + (i % 2) * 70, p.y - 34));
       addDiamond(760, groundY - 34);
@@ -91,7 +91,7 @@ const Levels = {
       const p3 = addPlatform(830, 580, 240, 'burger');
       const p4 = addPlatform(1140, 700, 210, 'sausage');
       const p5 = addPlatform(1430, 820, 230, 'burger');
-      const safe = addPlatform(830, 840, 240, 'sausage2');
+      const safe = addPlatform(830, 840, 240, 'sausage');
       putKey(p3);
       [p1, p2, p3, p4, p5, safe].forEach((p, i) => addDiamond(p.x + p.width / 2 - 12 + (i % 2 ? 35 : -35), p.y - 34));
       addEnemyOn(safe, 1.25, 'rush');
@@ -105,7 +105,7 @@ const Levels = {
       const p4 = addPlatform(1080, 485, 230, 'burger');
       const p5 = addPlatform(1370, 610, 220, 'sausage');
       const p6 = addPlatform(1510, 790, 240, 'burger');
-      const low = addPlatform(700, 850, 290, 'sausage2');
+      const low = addPlatform(700, 850, 290, 'sausage');
       putKey(p4);
       [p1, p2, p3, p4, p5, p6, low].forEach((p, i) => addDiamond(p.x + 40 + (i * 43) % Math.max(80, p.width - 70), p.y - 34));
       addEnemyOn(low, 1.35, 'rush');
@@ -119,7 +119,7 @@ const Levels = {
       const p3 = addPlatform(790, 610, 210, 'burger');
       const p4 = addPlatform(1060, 500, 230, 'sausage');
       const p5 = addPlatform(1350, 615, 210, 'burger');
-      const p6 = addPlatform(1530, 785, 250, 'sausage2');
+      const p6 = addPlatform(1530, 785, 250, 'sausage');
       const mid = addPlatform(780, 850, 280, 'burger');
       putKey(p4);
       [p1, p2, p3, p4, p5, p6, mid].forEach((p, i) => {

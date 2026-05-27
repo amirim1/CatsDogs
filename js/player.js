@@ -147,7 +147,7 @@ class Player {
   takeDamage(knockbackDir = 0, respawn = false) {
     if (this.flicker > 0 || this.lives <= 0) return false;
     this.lives--;
-    this.flicker = 105;
+    this.flicker = 180;
     this.vx = knockbackDir * 6.5;
     this.vy = -7;
     if (respawn && this.lives > 0) this.respawn();

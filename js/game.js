@@ -150,14 +150,16 @@ const Game = {
   },
 
   checkWin() {
-    if (!this.keyCollected || !this.allDiamondsCollected()) return;
+    if (!this.keyCollected) return;
+
     const catAtDoor = this.doors.some(door => door.owner === 'cat' && this.checkCollision(this.players[0], door));
     const dogAtDoor = this.doors.some(door => door.owner === 'dog' && this.checkCollision(this.players[1], door));
+
     if (catAtDoor && dogAtDoor) App.nextLevel();
   },
 
   allDiamondsCollected() {
-    return this.diamonds.every(diamond => diamond.collected);
+    return this.diamonds.every(diamond => diamond.collected);ы
   },
 
   updateParticles() {
@@ -294,23 +296,54 @@ const Game = {
   },
 
   drawFloor(ctx, platform, tileSize) {
-    const sets = {
-      choco: ['floor_choco_01', 'floor_choco_02', 'floor_choco_03', 'floor_choco_04'],
-      clean: ['floor_clean_01', 'floor_clean_02', 'floor_clean_03', 'floor_clean_04'],
-      pink: ['pinkfloor1of4', 'pinkfloor2of4', 'pinkfloor3of4', 'pinkfloor4of4'],
+    const floorTiles = {
+      top: {
+        left: 'pinkfloor2of4',
+        mid: 'pinkfloor3of4',
+        right: 'pinkfloor4of4',
+      },
+      middle: {
+        left: 'floor_clean_02',
+        mid: 'floor_clean_03',
+        right: 'floor_clean_04',
+      },
+      bottom: {
+        left: 'floor_choco_02',
+        mid: 'floor_choco_03',
+        right: 'floor_choco_04',
+      },
     };
-    const tiles = sets[platform.floorSet] || sets.choco;
 
-    for (let y = platform.y; y < platform.y + platform.height; y += tileSize) {
-      for (let x = platform.x; x < platform.x + platform.width; x += tileSize) {
-        const tw = Math.min(tileSize, platform.x + platform.width - x);
-        const th = Math.min(tileSize, platform.y + platform.height - y);
-        let index = 2;
-        if (y === platform.y) index = x === platform.x ? 0 : 1;
-        else if (y + tileSize >= platform.y + platform.height) index = 3;
-        const img = App.assets[tiles[index]];
-        if (img && img.complete && img.naturalWidth > 0) ctx.drawImage(img, x, y, tw, th);
-        else {
+    const floorBottom = platform.y + platform.height;
+    const floorRight = platform.x + platform.width;
+
+    for (let y = platform.y; y < floorBottom; y += tileSize) {
+      const th = Math.min(tileSize, floorBottom - y);
+
+      let layer = floorTiles.middle;
+
+      if (y === platform.y) {
+        layer = floorTiles.top;
+      } else if (y + tileSize >= floorBottom) {
+        layer = floorTiles.bottom;
+      }
+
+      for (let x = platform.x; x < floorRight; x += tileSize) {
+        const tw = Math.min(tileSize, floorRight - x);
+
+        let tileId = layer.mid;
+
+        if (x === platform.x) {
+          tileId = layer.left;
+        } else if (x + tileSize >= floorRight) {
+          tileId = layer.right;
+        }
+
+        const img = App.assets[tileId];
+
+        if (img && img.complete && img.naturalWidth > 0) {
+          ctx.drawImage(img, x, y, tw, th);
+        } else {
           ctx.fillStyle = '#6b4f3a';
           ctx.fillRect(x, y, tw, th);
         }
@@ -345,7 +378,7 @@ const Game = {
       ctx.fillRect(door.x, door.y, door.width, door.height);
     }
 
-    const ready = this.keyCollected && this.allDiamondsCollected();
+    const ready = this.keyCollected;
     ctx.fillStyle = door.owner === 'cat' ? '#ff6b6b' : '#74b9ff';
     ctx.beginPath();
     ctx.arc(door.x + door.width / 2, door.y - 18, 8, 0, Math.PI * 2);
