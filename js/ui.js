@@ -128,18 +128,19 @@ const UI = {
     ctx.save();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
+
     ctx.fillStyle = '#f1c40f';
     ctx.font = 'bold 54px monospace';
-    ctx.fillText('Victory!', w / 2, h / 2 - 78);
+    ctx.fillText('Победа!', w / 2, h / 2 - 78);
+
     ctx.fillStyle = '#ffffff';
     ctx.font = '22px monospace';
-    ctx.fillText('Все уровни пройдены.', w / 2, h / 2 - 18);
-    ctx.fillStyle = '#d1d5db';
-    ctx.font = '17px monospace';
-    ctx.fillText('Игра стала стабильнее, честнее и сложнее к финалу.', w / 2, h / 2 + 20);
+    ctx.fillText('Все уровни пройдены!', w / 2, h / 2 - 18);
+
     ctx.fillStyle = '#2ecc71';
     ctx.font = 'bold 24px monospace';
-    ctx.fillText('Press ENTER to play again', w / 2, h / 2 + 92);
+    ctx.fillText('Нажмите ENTER, чтобы начать заново', w / 2, h / 2 + 70);
+
     ctx.restore();
   },
 
