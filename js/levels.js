@@ -18,10 +18,10 @@
     const floorSet = floorSets[num % 3];
 
     const level = {
-      width: 1280,
-      height: 720,
+      width: 1920,
+      height: 1080,
       floorSet: floorSet,
-      spawn: { cat: { x: 80, y: 540 }, dog: { x: 180, y: 540 } },
+      spawn: { cat: { x: 120, y: 810 }, dog: { x: 270, y: 810 } },
       platforms: [],
       diamonds: [],
       doors: [],
@@ -29,31 +29,31 @@
       key: null,
     };
 
-    const groundY = 648;
+    const groundY = 972;
     const groundH = 500;
     level.platforms.push({ x: 0, y: groundY, width: level.width, height: groundH, style: 'floor', floorSet: floorSet });
 
     const platformLayouts = {
       1: [
-        { x: 200, y: 560 },
-        { x: 380, y: 510 },
-        { x: 560, y: 560 },
-        { x: 740, y: 510 },
+        { x: 300, y: 840 },
+        { x: 570, y: 765 },
+        { x: 840, y: 840 },
+        { x: 1110, y: 765 },
       ],
       2: [
-        { x: 180, y: 530 },
-        { x: 380, y: 470 },
-        { x: 580, y: 530 },
-        { x: 780, y: 470 },
-        { x: 980, y: 530 },
+        { x: 270, y: 795 },
+        { x: 570, y: 705 },
+        { x: 870, y: 795 },
+        { x: 1170, y: 705 },
+        { x: 1470, y: 795 },
       ],
       3: [
-        { x: 160, y: 550 },
-        { x: 330, y: 480 },
-        { x: 500, y: 410 },
-        { x: 670, y: 480 },
-        { x: 840, y: 410 },
-        { x: 1010, y: 550 },
+        { x: 240, y: 825 },
+        { x: 495, y: 720 },
+        { x: 750, y: 615 },
+        { x: 1005, y: 720 },
+        { x: 1260, y: 615 },
+        { x: 1515, y: 825 },
       ],
     };
     const positions = platformLayouts[num] || platformLayouts[1];
@@ -64,22 +64,22 @@
       const style = styles[i % styles.length];
       level.platforms.push({ x: pos.x, y: pos.y, width: 130, height: 36, style: style });
       if (Math.random() < 0.5) {
-        level.diamonds.push({ x: pos.x + 20 + Math.floor(Math.random() * 90), y: pos.y - 30 });
+        level.diamonds.push({ x: pos.x + 30 + Math.floor(Math.random() * 70), y: pos.y - 30 });
       }
     });
 
     for (let i = 0; i < 2 + num; i++) {
       level.diamonds.push({
-        x: 200 + Math.floor(Math.random() * (level.width - 400)),
+        x: 300 + Math.floor(Math.random() * (level.width - 600)),
         y: groundY - 30,
       });
     }
 
     const doorY = groundY - 96;
-    const margin = 80;
+    const margin = 120;
     const sectionW = (level.width - margin * 2) / 3;
-    const catX = margin + Math.floor(Math.random() * (sectionW - 48));
-    const dogX = margin + sectionW * 2 + Math.floor(Math.random() * (sectionW - 48));
+    const catX = margin + Math.floor(Math.random() * (sectionW - 72));
+    const dogX = margin + sectionW * 2 + Math.floor(Math.random() * (sectionW - 72));
     level.doors.push(
       { x: catX, y: doorY, width: 48, height: 96, isOpen: false, owner: 'cat' },
       { x: dogX, y: doorY, width: 48, height: 96, isOpen: false, owner: 'dog' },

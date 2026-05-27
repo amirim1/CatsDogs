@@ -147,9 +147,22 @@
 
   render() {
     const ctx = App.ctx;
+    const cw = App.canvas.width;
+    const ch = App.canvas.height;
+
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, cw, ch);
+
+    const scale = Math.min(cw / this.levelWidth, ch / this.levelHeight);
+    const ox = (cw - this.levelWidth * scale) / 2;
+    const oy = (ch - this.levelHeight * scale) / 2;
+
     ctx.save();
+    ctx.translate(ox, oy);
+    ctx.scale(scale, scale);
 
     this.drawBackground(ctx);
+    ctx.imageSmoothingEnabled = false;
     this.platforms.forEach(p => this.drawPlatform(ctx, p));
     this.doors.forEach(d => this.drawDoor(ctx, d));
     this.diamonds.forEach(d => d.draw(ctx));
@@ -163,17 +176,8 @@
   },
 
   drawBackground(ctx) {
-    ctx.fillStyle = '#2d2d44';
-    ctx.fillRect(-10, -10, this.levelWidth + 20, this.levelHeight + 510);
-
-    const bg = App.assets['background'];
-    if (bg && bg.complete && bg.naturalWidth > 0) {
-      for (let x = -10; x < this.levelWidth + 20; x += bg.width) {
-        for (let y = -10; y < this.levelHeight + 510; y += bg.height) {
-          ctx.drawImage(bg, x, y);
-        }
-      }
-    }
+    ctx.fillStyle = '#ff8fab';
+    ctx.fillRect(0, 0, this.levelWidth, this.levelHeight);
   },
 
   drawPlatform(ctx, p) {
