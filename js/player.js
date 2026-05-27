@@ -34,8 +34,8 @@ class Player {
 
     const keys = game.keys;
 
-      // Horizontal movement
-      let leftKey, rightKey;
+      // Horizontal movement and jump keys
+      let leftKey, rightKey, jumpKey;
       if (this.type === 'cat') {
         leftKey = 'KeyA';
         rightKey = 'KeyD';
