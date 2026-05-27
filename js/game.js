@@ -167,12 +167,12 @@
 
   drawBackground(ctx) {
     ctx.fillStyle = '#2d2d44';
-    ctx.fillRect(0, 0, this.levelWidth, this.levelHeight);
+    ctx.fillRect(-10, -10, this.levelWidth + 20, this.levelHeight + 510);
 
     const bg = App.assets['background'];
     if (bg && bg.complete && bg.naturalWidth > 0) {
-      for (let x = 0; x < this.levelWidth; x += bg.width) {
-        for (let y = 0; y < this.levelHeight; y += bg.height) {
+      for (let x = -10; x < this.levelWidth + 20; x += bg.width) {
+        for (let y = -10; y < this.levelHeight + 510; y += bg.height) {
           ctx.drawImage(bg, x, y);
         }
       }
@@ -314,3 +314,6 @@
            a.y + a.height > b.y;
   }
 };
+
+
+

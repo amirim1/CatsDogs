@@ -1,4 +1,4 @@
-const Levels = {
+﻿const Levels = {
   _last: null,
 
   generate(num) {
@@ -33,7 +33,7 @@ const Levels = {
     };
 
     const groundY = 648;
-    const groundH = level.height - groundY;
+    const groundH = 500;
     level.platforms.push({ x: 0, y: groundY, width: level.width, height: groundH, style: 'floor', floorSet: floorSet });
 
     const styles = ['burger', 'sausage'];

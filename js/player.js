@@ -13,9 +13,9 @@
     this.gravity = 0.35;
     this.onGround = false;
     this.jumpHeld = false;
-    this.coyoteTime = 0; // Frames remaining for coyote jump
-    this.coyoteTimeMax = 8; // Max coyote time frames (about 0.13s at 60fps)
-    this.jumpCut = false; // Whether jump was cut short
+    this.coyoteTime = 0;
+    this.coyoteTimeMax = 8;
+    this.jumpCut = false;
     this.type = type;
     this.color = color;
     this.score = 0;
@@ -28,7 +28,6 @@
 
     const keys = game.keys;
 
-      // Horizontal movement and jump keys
       let leftKey, rightKey, jumpKey;
       if (this.type === 'cat') {
         leftKey = 'KeyA';
@@ -44,24 +43,21 @@
       else if (keys[rightKey]) this.vx += this.accel;
       else this.vx *= this.friction;
 
-      // Jump handling with coyote time and jump cut
       if (keys[jumpKey]) {
         if (this.onGround || this.coyoteTime > 0) {
           this.vy = this.jumpPower;
           this.onGround = false;
           this.jumpHeld = true;
-          this.coyoteTime = 0; // Reset coyote time when jumping
+          this.coyoteTime = 0;
           App.playSound('jump');
           this.jumpCut = false;
         } else if (this.jumpHeld && this.vy < 0) {
-          // Held jump - reduced gravity for higher jump
           this.vy += this.gravity * 0.7;
         }
       } else {
         this.jumpHeld = false;
-        // Jump cut - increase gravity when jump button released early
         if (this.vy < 0) {
-          this.vy += this.gravity * 0.3; // Apply extra gravity to cut jump short
+          this.vy += this.gravity * 0.3;
           this.jumpCut = true;
         }
       }
@@ -82,9 +78,11 @@
       if (overlapY <= 0) return;
       if (game.checkCollision(this, p)) {
         const feetY = this.y + this.height;
+        const headY = this.y;
         if (feetY >= p.y && feetY - p.y <= 12) {
           this.y = p.y - this.height;
           this.vy = 0.5;
+        } else if (headY >= p.y + p.height) {
         } else {
           if (this.vx > 0) this.x = p.x - this.width;
           else if (this.vx < 0) this.x = p.x + p.width;
@@ -93,30 +91,29 @@
       }
     });
 
-    // Update coyote time - allow jump for a short time after leaving platform
     if (this.onGround) {
       this.coyoteTime = this.coyoteTimeMax;
     } else if (this.coyoteTime > 0) {
       this.coyoteTime--;
     }
 
+    const oldY = this.y;
     this.y += this.vy;
     this.onGround = false;
     game.platforms.forEach(p => {
       if (game.checkCollision(this, p)) {
-        if (this.vy > 0) {
+        if (this.vy > 0 && oldY + this.height <= p.y) {
           this.y = p.y - this.height;
           this.vy = 0;
           this.onGround = true;
-          this.coyoteTime = this.coyoteTimeMax; // Reset coyote time when landing
-        } else if (this.vy < 0) {
+          this.coyoteTime = this.coyoteTimeMax;
+        } else if (this.vy < 0 && oldY >= p.y + p.height) {
           this.y = p.y + p.height;
           this.vy = 0;
         }
       }
     });
 
-    // Ceiling
     if (this.y < 0) {
       this.y = 0;
       this.vy = 0;
@@ -162,13 +159,11 @@
 
     ctx.restore();
 
-    // Name label
     ctx.fillStyle = '#fff';
     ctx.font = '14px monospace';
     ctx.textAlign = 'center';
     ctx.fillText(this.type, Math.round(this.x + this.width / 2), Math.round(this.y - 8));
 
-    // Lives hearts
     for (let i = 0; i < 3; i++) {
       ctx.fillStyle = i < this.lives ? '#e74c3c' : '#333';
       ctx.font = '12px monospace';
