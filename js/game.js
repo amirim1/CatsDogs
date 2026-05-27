@@ -29,6 +29,14 @@ const Game = {
         else if (App.state === 'win') App.startGame();
         else if (App.state === 'fail') App.restartLevel();
       }
+
+      if (code === 'Escape' && App.state === 'playing') {
+        App.paused = !App.paused;
+      }
+
+      if (code === 'KeyR' && App.state === 'playing') {
+        App.restartLevel();
+      }
     });
 
     window.addEventListener('keyup', (e) => {
@@ -106,16 +114,14 @@ const Game = {
       }
     }
 
-    // Enemy collision
+    // Enemy collision — only one hit per frame per player
     this.players.forEach(p => {
       if (p.lives <= 0 || p.flicker > 0) return;
-      this.enemies.forEach(e => {
-        if (this.checkCollision(p, e)) {
-          p.lives--;
-          p.flicker = 45;
-          App.playSound('hurt');
-        }
-      });
+      if (this.enemies.some(e => this.checkCollision(p, e))) {
+        p.lives--;
+        p.flicker = 45;
+        App.playSound('hurt');
+      }
     });
 
     // Check if both dead
@@ -123,22 +129,22 @@ const Game = {
       App.state = 'fail';
     }
 
-    // Fall off
-    if (this.players.every(p => p.y > this.levelHeight + 50)) {
-      this.players.forEach(p => {
+    // Fall off — punish only the falling player
+    this.players.forEach(p => {
+      if (p.y > this.levelHeight + 50 && p.lives > 0) {
         p.lives--;
         p.flicker = 45;
-      });
-      App.playSound('hurt');
-      if (this.players.every(p => p.lives <= 0)) {
-        App.state = 'fail';
+        App.playSound('hurt');
       }
+    });
+    if (this.players.every(p => p.lives <= 0)) {
+      App.state = 'fail';
     }
 
     const midX = (this.players[0].x + this.players[1].x) / 2;
     const midY = (this.players[0].y + this.players[1].y) / 2;
-    this.camera.x = midX - App.canvas.width / 2;
-    this.camera.y = midY - App.canvas.height / 2;
+    this.camera.x = Math.max(0, Math.min(this.levelWidth - App.canvas.width, midX - App.canvas.width / 2));
+    this.camera.y = Math.max(0, Math.min(this.levelHeight - App.canvas.height, midY - App.canvas.height / 2));
   },
 
   render() {
@@ -194,7 +200,9 @@ const Game = {
     const mid = App.assets[midKey];
     const right = App.assets[rightKey];
 
-    if (left && left.complete && left.naturalWidth > 0) {
+    if (left && left.complete && left.naturalWidth > 0 &&
+        mid && mid.complete && mid.naturalWidth > 0 &&
+        right && right.complete && right.naturalWidth > 0) {
       const lw = tileSize;
       const mw = tileSize;
       const rw = tileSize;
@@ -261,7 +269,8 @@ const Game = {
   drawSectionedPlatform(ctx, p, tileSize) {
     const left = App.assets['sausage2_left'];
     const right = App.assets['sausage2_right'];
-    if (left && left.complete && left.naturalWidth > 0) {
+    if (left && left.complete && left.naturalWidth > 0 &&
+        right && right.complete && right.naturalWidth > 0) {
       ctx.drawImage(left, p.x, p.y, tileSize, tileSize);
       ctx.drawImage(right, p.x + p.width - tileSize, p.y, tileSize, tileSize);
       // fill middle

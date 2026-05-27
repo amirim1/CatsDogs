@@ -1,10 +1,4 @@
-class Player {
-  // maxJump ≈ 204px (held) / 143px (tap)
-  //   held: v0²/2g = 100/(2×0.245) = 204
-  //   tap:  v0²/2g = 100/(2×0.35)  = 143
-  static JUMP_POWER = -10;
-  static GRAVITY = 0.35;
-
+﻿class Player {
   constructor(x, y, type, color) {
     this.x = x;
     this.y = y;
@@ -15,8 +9,8 @@ class Player {
     this.accel = 0.4;
     this.friction = 0.88;
     this.maxSpeed = 5;
-    this.jumpPower = Player.JUMP_POWER;
-    this.gravity = Player.GRAVITY;
+    this.jumpPower = -10;
+    this.gravity = 0.35;
     this.onGround = false;
     this.jumpHeld = false;
     this.coyoteTime = 0; // Frames remaining for coyote jump
@@ -85,7 +79,7 @@ class Player {
     this.x += this.vx;
     game.platforms.forEach(p => {
       const overlapY = Math.min(this.y + this.height, p.y + p.height) - Math.max(this.y, p.y);
-      if (overlapY < 15) return;
+      if (overlapY <= 0) return;
       if (game.checkCollision(this, p)) {
         const feetY = this.y + this.height;
         if (feetY >= p.y && feetY - p.y <= 12) {
@@ -140,7 +134,7 @@ class Player {
   draw(ctx) {
     const assetKey = this.getSpriteKey();
     let img = App.assets[assetKey];
-    if (!img || !img.complete || !img.naturalWidth > 0) img = null;
+    if (!img || !img.complete || img.naturalWidth <= 0) img = null;
 
     if (this.flicker > 0 && Math.floor(this.flicker / 4) % 2 === 0) return;
 

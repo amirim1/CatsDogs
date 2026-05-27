@@ -1,7 +1,8 @@
-const App = {
+﻿const App = {
   canvas: null,
   ctx: null,
   state: 'menu',
+  paused: false,
   currentLevel: 1,
   assets: {},
   assetsLoaded: false,
@@ -73,6 +74,7 @@ const App = {
       };
       img.onerror = () => {
         loaded++;
+        console.warn('Failed to load asset:', item.id, item.src);
         if (loaded >= total) this.assetsLoaded = true;
       };
       img.src = item.src;
@@ -96,13 +98,17 @@ const App = {
   },
 
   loop() {
-    this.update();
-    this.render();
+    try {
+      this.update();
+      this.render();
+    } catch (e) {
+      console.error('Game loop error:', e);
+    }
     requestAnimationFrame(() => this.loop());
   },
 
   update() {
-    if (this.state === 'playing') Game.update();
+    if (this.state === 'playing' && !this.paused) Game.update();
   },
 
   render() {
@@ -117,10 +123,22 @@ const App = {
       UI.drawFail(ctx);
     } else if (this.state === 'playing') {
       Game.render();
+      if (this.paused) {
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 36px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('PAUSED', this.canvas.width / 2, this.canvas.height / 2);
+        ctx.font = '16px monospace';
+        ctx.fillText('Press ESC to resume', this.canvas.width / 2, this.canvas.height / 2 + 40);
+      }
     }
   },
 
   startGame() {
+    this.paused = false;
     this.state = 'playing';
     this.currentLevel = 1;
     Game.initLevel(1);
@@ -137,6 +155,7 @@ const App = {
   },
 
   restartLevel() {
+    this.paused = false;
     this.state = 'playing';
     Game.initLevel(this.currentLevel);
   }
@@ -145,3 +164,4 @@ const App = {
 window.addEventListener('DOMContentLoaded', () => {
   App.init();
 });
+
