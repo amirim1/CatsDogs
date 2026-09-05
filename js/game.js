@@ -14,6 +14,7 @@ const Game = {
   levelTime: 0,
   spawn: null,
   shake: 0,
+  runStats: { diamondsBase: 0, diamondsTotal: 0, runFrames: 0, newRecords: 0 },
 
   init() {
     this.setupInput();
@@ -57,6 +58,7 @@ const Game = {
     this.levelTime = 0;
     this.particles = [];
     this.shake = 0;
+    this.runStats.diamondsTotal = this.runStats.diamondsBase + (data.diamonds || []).length;
 
     this.key = data.key ? new Key(data.key.x, data.key.y) : null;
     this.enemies = (data.enemies || []).map(enemy => new Enemy(
@@ -159,7 +161,14 @@ const Game = {
     const catAtDoor = this.doors.some(door => door.owner === 'cat' && this.checkCollision(this.players[0], door));
     const dogAtDoor = this.doors.some(door => door.owner === 'dog' && this.checkCollision(this.players[1], door));
 
-    if (catAtDoor && dogAtDoor) App.nextLevel();
+    if (catAtDoor && dogAtDoor) this.finishLevel();
+  },
+
+  finishLevel() {
+    this.runStats.runFrames += this.levelTime;
+    this.runStats.diamondsBase += this.diamonds.filter(diamond => diamond.collected).length;
+    if (App.saveBestTime(App.currentLevel, this.levelTime)) this.runStats.newRecords++;
+    App.nextLevel();
   },
 
   allDiamondsCollected() {
@@ -222,7 +231,25 @@ const Game = {
     this.drawParticles(ctx);
 
     ctx.restore();
+
+    if (this.levelTime < 100) this.drawLevelBanner(ctx, cw, ch);
     UI.drawHUD(ctx);
+  },
+
+  drawLevelBanner(ctx, cw, ch) {
+    const alpha = this.levelTime >= 70 ? Math.max(0, (100 - this.levelTime) / 30) : 1;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 52px monospace';
+    ctx.lineWidth = 8;
+    ctx.strokeStyle = 'rgba(15,23,42,0.65)';
+    const text = `Уровень ${App.currentLevel}`;
+    ctx.strokeText(text, cw / 2, ch * 0.28);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(text, cw / 2, ch * 0.28);
+    ctx.restore();
   },
 
   drawBackground(ctx) {

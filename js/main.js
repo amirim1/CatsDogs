@@ -173,7 +173,35 @@ const App = {
     this.paused = false;
     this.state = 'playing';
     this.currentLevel = 1;
+    Game.runStats = { diamondsBase: 0, diamondsTotal: 0, runFrames: 0, newRecords: 0 };
     Game.initLevel(this.currentLevel);
+  },
+
+  formatTime(frames) {
+    const totalSeconds = Math.floor(frames / 60);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${String(seconds).padStart(2, '0')}`;
+  },
+
+  loadBestTimes() {
+    try {
+      return JSON.parse(localStorage.getItem('catsdogs_best_times') || '{}');
+    } catch (_) {
+      return {};
+    }
+  },
+
+  saveBestTime(levelNum, frames) {
+    try {
+      const best = this.loadBestTimes();
+      if (best[levelNum] === undefined || frames < best[levelNum]) {
+        best[levelNum] = frames;
+        localStorage.setItem('catsdogs_best_times', JSON.stringify(best));
+        return true;
+      }
+    } catch (_) {}
+    return false;
   },
 
   nextLevel() {

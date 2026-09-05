@@ -6,29 +6,42 @@ const UI = {
     const collected = Game.diamonds.filter(diamond => diamond.collected).length;
     const catLives = Game.players[0] ? Game.players[0].lives : 0;
     const dogLives = Game.players[1] ? Game.players[1].lives : 0;
+    const runFrames = Game.runStats.runFrames + Game.levelTime;
+    const best = App.loadBestTimes()[App.currentLevel];
 
     ctx.save();
     ctx.fillStyle = 'rgba(16, 24, 39, 0.78)';
     ctx.fillRect(0, 0, w, 52);
-
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 18px monospace';
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
-    ctx.fillText(`Level ${App.currentLevel}/${Levels.count()}`, 18, 26);
 
-    ctx.font = '16px monospace';
-    ctx.fillStyle = Game.keyCollected ? '#f1c40f' : '#9ca3af';
-    ctx.fillText(Game.keyCollected ? 'Key: ✓' : 'Key: ?', 150, 26);
+    let x = 18;
+    const put = (text, color, bold = false) => {
+      ctx.font = `${bold ? 'bold ' : ''}16px monospace`;
+      ctx.fillStyle = color;
+      ctx.fillText(text, x, 26);
+      x += ctx.measureText(text).width + 28;
+    };
 
-    ctx.fillStyle = collected === total ? '#2ecc71' : '#4dd8ff';
-    ctx.fillText(`Diamonds: ${collected}/${total}`, 250, 26);
+    ctx.font = 'bold 18px monospace';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(`Level ${App.currentLevel}/${Levels.count()}`, x, 26);
+    x += ctx.measureText(`Level ${App.currentLevel}/${Levels.count()}`).width + 28;
 
-    const status = Game.keyCollected ? 'Doors are ready' : 'Find the key to open the doors';
-    ctx.fillStyle = '#d1d5db';
-    ctx.fillText(status, 430, 26);
+    put(`⏱ ${App.formatTime(runFrames)}`, '#e5e7eb');
+    if (best !== undefined) put(`Best ${App.formatTime(best)}`, '#f1c40f');
+    put(Game.keyCollected ? 'Key ✓' : 'Key ?', Game.keyCollected ? '#f1c40f' : '#9ca3af');
+    put(`Diamonds ${collected}/${total}`, collected === total ? '#2ecc71' : '#4dd8ff');
+
+    if (w >= 900 && x < w * 0.55) {
+      ctx.font = '15px monospace';
+      ctx.fillStyle = '#d1d5db';
+      ctx.textAlign = 'center';
+      ctx.fillText(Game.keyCollected ? 'Doors are ready' : 'Find the key to open the doors', w / 2, 26);
+    }
 
     ctx.textAlign = 'right';
+    ctx.font = 'bold 15px monospace';
     ctx.fillStyle = '#ff6b6b';
     ctx.fillText(`Cat ${'♥'.repeat(catLives)}${'♡'.repeat(Math.max(0, 3 - catLives))}`, w - 245, 26);
     ctx.fillStyle = '#74b9ff';
@@ -36,7 +49,7 @@ const UI = {
 
     ctx.fillStyle = 'rgba(255,255,255,0.72)';
     ctx.font = '12px monospace';
-    ctx.fillText('R — restart   ESC — pause   M — sound', w - 18, h - 18);
+    ctx.fillText(`R — restart   ESC — pause   M — sound: ${App.soundEnabled ? 'on' : 'off'}`, w - 18, h - 18);
     ctx.restore();
   },
 
@@ -107,6 +120,10 @@ const UI = {
   drawPause(ctx) {
     const w = App.canvas.width;
     const h = App.canvas.height;
+    const runFrames = Game.runStats.runFrames + Game.levelTime;
+    const total = Game.diamonds.length;
+    const collected = Game.diamonds.filter(diamond => diamond.collected).length;
+
     ctx.save();
     ctx.fillStyle = 'rgba(0,0,0,0.55)';
     ctx.fillRect(0, 0, w, h);
@@ -114,15 +131,22 @@ const UI = {
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 44px monospace';
-    ctx.fillText('PAUSED', w / 2, h / 2 - 20);
+    ctx.fillText('PAUSED', w / 2, h / 2 - 60);
     ctx.font = '17px monospace';
-    ctx.fillText('Press ESC to continue', w / 2, h / 2 + 34);
+    ctx.fillStyle = '#d1d5db';
+    ctx.fillText(`Уровень ${App.currentLevel} из ${Levels.count()}`, w / 2, h / 2 - 2);
+    ctx.fillText(`⏱ ${App.formatTime(runFrames)}   💎 ${collected}/${total}`, w / 2, h / 2 + 30);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText('Press ESC to continue   ·   R to restart level', w / 2, h / 2 + 74);
     ctx.restore();
   },
 
   drawWin(ctx) {
     const w = App.canvas.width;
     const h = App.canvas.height;
+    const stats = Game.runStats;
+    const perfect = stats.diamondsTotal > 0 && stats.diamondsBase >= stats.diamondsTotal;
+
     this.drawMenuBackground(ctx, w, h);
 
     ctx.save();
@@ -131,15 +155,38 @@ const UI = {
 
     ctx.fillStyle = '#f1c40f';
     ctx.font = 'bold 54px monospace';
-    ctx.fillText('Победа!', w / 2, h / 2 - 78);
+    ctx.fillText('Победа!', w / 2, h / 2 - 120);
 
     ctx.fillStyle = '#ffffff';
     ctx.font = '22px monospace';
-    ctx.fillText('Все уровни пройдены!', w / 2, h / 2 - 18);
+    ctx.fillText('Все уровни пройдены!', w / 2, h / 2 - 64);
+
+    const cardY = h / 2 - 20;
+    this.drawMenuCard(ctx, w / 2 - 230, cardY, 460, 150);
+    ctx.font = '20px monospace';
+    ctx.fillStyle = '#e5e7eb';
+    ctx.fillText(`⏱ Общее время: ${App.formatTime(stats.runFrames)}`, w / 2, cardY + 40);
+    ctx.fillStyle = '#4dd8ff';
+    ctx.fillText(`💎 Алмазы: ${stats.diamondsBase}/${stats.diamondsTotal}`, w / 2, cardY + 78);
+    if (perfect) {
+      ctx.fillStyle = '#f1c40f';
+      ctx.font = 'bold 20px monospace';
+      ctx.fillText('⭐ PERFECT — все алмазы собраны!', w / 2, cardY + 118);
+    } else {
+      ctx.fillStyle = '#9ca3af';
+      ctx.font = '17px monospace';
+      ctx.fillText(`Алмазы — бонус к статистике. Попробуй собрать все!`, w / 2, cardY + 118);
+    }
+
+    if (stats.newRecords > 0) {
+      ctx.fillStyle = '#f1c40f';
+      ctx.font = 'bold 19px monospace';
+      ctx.fillText(`🏆 Новых рекордов: ${stats.newRecords}`, w / 2, h / 2 + 160);
+    }
 
     ctx.fillStyle = '#2ecc71';
     ctx.font = 'bold 24px monospace';
-    ctx.fillText('Нажмите ENTER, чтобы начать заново', w / 2, h / 2 + 70);
+    ctx.fillText('Нажмите ENTER, чтобы начать заново', w / 2, h / 2 + 210);
 
     ctx.restore();
   },
