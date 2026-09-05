@@ -59,8 +59,8 @@ const App = {
       ['burger_mid', 'assets/floor/burger2of3.png'],
       ['burger_right', 'assets/floor/burger3of3.png'],
       ['sausage_left', 'assets/floor/sausage1of3.png'],
-      ['sausage_mid', 'assets/floor/sausage20f3.png'],
-      ['sausage_right', 'assets/floor/sausage30f3.png'],
+      ['sausage_mid', 'assets/floor/sausage2of3.png'],
+      ['sausage_right', 'assets/floor/sausage3of3.png'],
       ['sausage2_left', 'assets/floor/sausage1of2.png'],
       ['sausage2_right', 'assets/floor/sausage2of2.png'],
       ['floor_choco_01', 'assets/floor/floor_choco_01.png'],
@@ -73,8 +73,8 @@ const App = {
       ['floor_clean_04', 'assets/floor/floor_clean_04.png'],
       ['pinkfloor1of4', 'assets/floor/pinkfloor1of4.png'],
       ['pinkfloor2of4', 'assets/floor/pinkfloor2of4.png'],
-      ['pinkfloor3of4', 'assets/floor/pinkfloor3of4.png.png'],
-      ['pinkfloor4of4', 'assets/floor/pinkfloor4of4.png.png'],
+      ['pinkfloor3of4', 'assets/floor/pinkfloor3of4.png'],
+      ['pinkfloor4of4', 'assets/floor/pinkfloor4of4.png'],
     ].forEach(([id, src]) => add(id, src));
 
     let completed = 0;
