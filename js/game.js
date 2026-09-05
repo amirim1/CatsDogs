@@ -140,6 +140,10 @@ const Game = {
   handleFalling() {
     this.players.forEach(player => {
       if (player.y > this.levelHeight + 180 && player.lives > 0) {
+        if (player.flicker > 0) {
+          player.respawn();
+          return;
+        }
         if (player.takeDamage(0, true)) {
           this.shake = 10;
           App.playSound('hurt');
@@ -159,7 +163,7 @@ const Game = {
   },
 
   allDiamondsCollected() {
-    return this.diamonds.every(diamond => diamond.collected);ы
+    return this.diamonds.length > 0 && this.diamonds.every(diamond => diamond.collected);
   },
 
   updateParticles() {
